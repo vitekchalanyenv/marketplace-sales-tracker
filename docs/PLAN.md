@@ -11,7 +11,7 @@
 | **M6: Přehled** | jednoduchý dashboard (nejspíš Streamlit) | celkem / podle marketplace / podle produktu / v čase |
 | **M7: Portfolio** | README, diagram, video, sekce „co jsem AI nepustil ven“ | připraveno k odeslání do přihlášky |
 
-## Společný model prodeje (návrh, upřesní se v M1)
+## Společný model prodeje (upřesněno v M1, 2026-11-20)
 
 | Pole | Popis |
 |---|---|
@@ -22,5 +22,6 @@
 | `sold_at` | čas prodeje v UTC |
 | `gross_cents` | cena, kterou zaplatil zákazník |
 | `net_cents` | co dostane Vítek (po poplatcích), pokud je známo |
-| `currency` | ISO kód měny (USD, EUR…) |
+| `currency` | ISO kód měny (USD, EUR…), velkými písmeny. Částky se ukládají **v původní měně marketplace**, bez převodu |
+| `status` | `sold` / `refunded` / `partially_refunded` / `chargeback`. Refund se neukládá jako nový prodej, jen změní `status` existujícího. Každý marketplace ho čte po svém |
 | `raw` | původní záznam (JSON), kvůli dohledání |

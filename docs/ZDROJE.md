@@ -7,11 +7,60 @@ Co víme o každém marketplace. Doplňuj, když se něco ověří.
 - REST API `https://api.gumroad.com/v2/`, autentizace access tokenem (hlavička `Authorization: Bearer …`).
 - Token pro vlastní účet: Settings → Advanced → Applications → vytvořit aplikaci (Redirect URI libovolné,
   např. `http://localhost:8000/callback`) → **Generate access token**. Token nevyprší, dokud se nezruší.
-- Prodeje: `GET /v2/sales`, filtry `after` / `before` (datum), stránkování přes `page_key` / `next_page_url`.
-  Vyžaduje scope `view_sales`.
 - Produkty: `GET /v2/products`.
-- **K ověření v M1:** přesné názvy polí v odpovědi (cena, poplatek, měna, čas). Uložit jeden vzorek skutečné odpovědi
-  do `data/private/` a podle něj napsat vymyšlený vzorek do `data/sample/`.
+- Výplaty: bankovní účet (IBAN) přes Gumroad, **výplata v CZK**. Prodeje a poplatky jsou ale v USD;
+  převod na CZK dělá Gumroad při výplatě (kurz v API prodejů není).
+- **Ověřeno 2026-11-20 (skutečné requesty):**
+  - Hlavička `Authorization: Bearer <token>` funguje (HTTP 200). Dokumentace v příkladech posílá `access_token` jako parametr.
+  - `GET /v2/sales` (i s `?after=2010-01-01`) vrací `{"success": true, "sales": []}`: na Gumroadu zatím **není žádný prodej**.
+    Bez dalších stránek v odpovědi `next_page_url` / `next_page_key` vůbec nejsou.
+  - `GET /v2/products`: 1 produkt, `price` je celé číslo v centech (`1499`), `currency` malými písmeny (`"usd"`),
+    `sales_count` int, `sales_usd_cents` je **float** (do DB ne jako float).
+
+### `GET /v2/sales` – podle dokumentace a zdrojového kódu (neověřeno na skutečném prodeji)
+
+Vyžaduje scope `view_sales`.
+
+Zdroj: Gumroad je open source (`github.com/antiwork/gumroad`, větev `main`, staženo 2026-11-20).
+Stránka `gumroad.com/api` se skládá JavaScriptem a bez prohlížeče se nedá přečíst, proto jsme četli přímo zdroj:
+`app/javascript/components/ApiDocumentation/Endpoints/Sales.tsx` + `responseFieldDefinitions.ts` (dokumentace)
+a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/models/purchase.rb` (co se opravdu posílá).
+
+- **Parametry:** `after`, `before` (`YYYY-MM-DD`; v kódu `created_at >= after`, `created_at < before`),
+  `product_id`, `email`, `order_id`, `name`, `license_key`, `page_key`. Parametr `page` je zastaralý.
+- **Stránkování:** max. **100** prodejů na stránku, od nejnovějšího. Když je další stránka, odpověď obsahuje
+  `next_page_key` (např. `"20230119081040000000-123456"`) a `next_page_url`. Další stránka = stejný request + `page_key`.
+  Na poslední stránce tato pole chybí.
+- **Vrací jen „úspěšné“ prodeje** (popis endpointu). Jestli jsou mezi nimi i refundované, z kódu přímo nevyplývá
+  (scope `for_sales_api`) → ověřit na prvním skutečném refundu.
+- **Pole prodeje, která potřebujeme:**
+
+| Pole | Typ | Význam |
+|---|---|---|
+| `id` | string | ID prodeje (např. `"B28UKN-dvxYabdavG97Y-Q=="`) → `external_id` |
+| `order_id` | number | číselné ID objednávky |
+| `created_at` | string | ISO 8601 v UTC (`"2021-01-05T19:38:56Z"`) → `sold_at` |
+| `daystamp`, `timestamp` | string | jen pro zobrazení (čas v zóně prodejce, „about 2 months ago“) – **nepoužívat** |
+| `product_id`, `product_permalink`, `product_name` | string | produkt |
+| `price` | int | zaplaceno, **centy v USD** (kód: `price_cents`; dokumentace: „canonical fields like `price` keep their USD accounting meaning“) |
+| `gumroad_fee` | int | poplatek Gumroadu v centech (USD) |
+| `tax_cents`, `shipping_cents`, `tip_cents` | int | daň, doprava, spropitné v centech |
+| `processor_fee_cents`, `processor_fee_currency` | int, string | jen u Stripe Connect / PayPal marketplace |
+| `currency` | string | ISO kód měny, ve které je produkt **vypsaný** (`"usd"`) – malými písmeny |
+| `currency_symbol`, `formatted_display_price`, `formatted_total_price` | string | texty pro zobrazení |
+| `quantity` | int | počet kusů |
+| `refunded` | bool | celý refund (**v ukázce v dokumentaci chybí, ale kód ho posílá**) |
+| `partially_refunded` | bool | částečný refund |
+| `amount_refundable_in_currency` | string | kolik ještě jde vrátit, **formátovaný text** v měně produktu (např. `"0"`, `"10"`) |
+| `chargedback`, `disputed`, `dispute_won` | bool | chargeback / spor |
+| `affiliate` | object | `{email, amount}`, `amount` je text (`"$2.50"`); chybí, když nebyl affiliate |
+| `buyer_presentment` | object | jen když zákazník platil ve své měně (`currency`, `price_cents`, `total_cents`, `fx_rate` jako text, `refunded_cents`) – **není** to Vítkův příjem |
+| `email`, `purchase_email`, `full_name`, `zip_code`, `country`… | | osobní údaje kupujícího – **neukládat mimo `raw`, nevypisovat** |
+
+- **Pozor:** `Purchase#as_json` maže pole s hodnotou `null` (`delete_if { |_, v| v.nil? }`). Pole tedy může v odpovědi
+  **úplně chybět**, ne být `null`. Parser musí počítat s chybějícími klíči.
+- Částka refundu v centech v odpovědi přímo není. Dá se spočítat jako `price` − `amount_refundable_in_currency` (převedené
+  na centy), ale jen u USD produktů. Pro M1 stačí `refunded` / `partially_refunded`.
 
 ## Fab – měsíční CSV report 🟠
 
@@ -25,10 +74,10 @@ Co víme o každém marketplace. Doplňuj, když se něco ověří.
 
 - Sekce Reports → Sales. Žádný export.
 - Sloupce: `Transaction ID` (např. `#30001`), `Products` (název + slug, např. `sample-medieval-village`),
-  `Amount` (USD), `Payout` (USD), `Date` (`YYYY-MM-DD HH:MM`, časová zóna neznámá).
+  `Amount` (USD), `Payout` (USD), `Date` (`YYYY-MM-DD HH:MM`, místní čas Vítka – Europe/Prague, tj. CET/CEST; rozhodnuto 2026-11-20).
 - Stránkování 10 / stránka.
 - **K rozhodnutí v M4:** automatizace prohlížeče, nebo jestli web volá vlastní JSON API, které jde použít
-  s Vítkovým přihlášením. Nejdřív se zeptat Vítka. Ověřit časovou zónu.
+  s Vítkovým přihlášením. Nejdřív se zeptat Vítka.
 
 ## CGTrader – API na žádost 🟡
 
