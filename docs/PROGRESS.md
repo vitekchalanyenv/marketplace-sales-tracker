@@ -39,6 +39,7 @@
 
 ## Prostředí (poznámky)
 
-- `git fetch/push` s výchozím `http.sslBackend=openssl` padá na „unable to get local issuer certificate“;
-  se `schannel` (úložiště certifikátů Windows) funguje.
-- `uv` je v `%USERPROFILE%\.local\bin`, který není v PATH.
+- `git` používá `http.sslBackend schannel` (globálně nastavil Vítek 2026-11-20); s výchozím `openssl` padá na
+  „unable to get local issuer certificate“.
+- `uv` je v `%USERPROFILE%\.local\bin`, v uživatelském PATH je (2026-11-20). Terminál otevřený dřív ho nevidí,
+  pomůže restart terminálu/aplikace.
