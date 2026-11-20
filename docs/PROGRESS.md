@@ -3,23 +3,16 @@
 ## Hotovo
 
 - 2026-11-20 – M0: kostra repa, pravidla, plán, přehled zdrojů, návrh specifikace M1.
+- 2026-11-20 – M1: Gumroad → SQLite. Napsáno, testy prošly (64), **ověřeno na skutečném prodeji** (zkušební nákup
+  Vítka přes slevový kód): staženo 1, druhý běh 0 nových, `net` sedí se vzorcem poplatků.
+  Na skutečných datech neověřeno: refund, stránkování (>100 prodejů).
 
 ## Rozpracováno
 
-- M1 – Gumroad: **napsáno, testy prošly (64), ověřeno na skutečném účtu jen částečně** (2026-11-20):
-  - `uv run python -m sales_tracker sync gumroad` proběhl proti skutečnému API: staženo 0 (na Gumroadu zatím není prodej),
-    druhý běh i `--since 2020-01-01` OK, neplatný token → správná hláška.
-  - Převod prodeje, refundy, stránkování a idempotence ověřeny **jen na vymyšlených datech** (struktura z dokumentace
-    a zdrojového kódu Gumroadu).
-  - Kritérium hotovosti „stáhne skutečné prodeje“ zůstává otevřené do prvního skutečného prodeje (nebo testovacího
-    nákupu přes 100% slevový kód). Pak porovnat odpověď se `ZDROJE.md` a uložit vzorek do `data/private/`.
-  - 2026-11-20: Vítek – zkušební nákup za 0 na Gumroadu asi nejde a na prodej se může čekat dlouho → M1 zůstává
-    otevřené (jen ověření na skutečném prodeji), pokračujeme M2.
-- M2 – Katalog produktů: návrh spec `docs/spec/M2-katalog.md` (2026-11-20), čeká na schválení a otázky 1–3.
+- M2 – Katalog produktů: spec `docs/spec/M2-katalog.md` schválena 2026-11-20, otázky 1–3 rozhodnuty; implementace běží.
 
 ## Čeká na Vítka
 
-- Schválit `docs/spec/M2-katalog.md` a odpovědět na otázky 1–3 (co je jeden produkt, balíčky, seznam produktů).
 - (M3) Poslat všechny názvy sloupců Fab CSV reportu.
 - (M4) Volitelně požádat o CGTrader API.
 
@@ -30,6 +23,7 @@
 
 ## Známé problémy
 
+- V DB je zkušební prodej Gumroad (malá částka, 2026-11-20). Zkreslí součty, dokud se nevyřeší (refund / označení jako test).
 - HTTPS na Vítkově počítači jde přes certifikát, kterému věří jen úložiště Windows (antivirus/proxy). Řešeno: git → `http.sslBackend schannel`, Python → `ssl.create_default_context()`. Každý nový HTTP klient musí jet stejně.
 
 ## Rozhodnutí

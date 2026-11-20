@@ -2,7 +2,8 @@
 
 **Stav:** schváleno Vítkem 2026-11-20. Upřesněno 2026-11-20 podle dokumentace a zdrojového kódu Gumroadu
 (skutečný prodej zatím neexistuje). Otázky 1–3 rozhodl Vítek 2026-11-20.
-**Implementace:** napsáno, testy prošly (64), ověřeno na skutečném účtu – ale jen s 0 prodeji (viz `PROGRESS.md`).
+**Implementace:** napsáno, testy prošly (64), **ověřeno na skutečném prodeji** 2026-11-20 (zkušební nákup Vítka).
+Neověřeno na skutečných datech: refund a stránkování (>100 prodejů).
 
 ## Cíl
 

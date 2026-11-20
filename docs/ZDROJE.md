@@ -12,12 +12,28 @@ Co víme o každém marketplace. Doplňuj, když se něco ověří.
   převod na CZK dělá Gumroad při výplatě (kurz v API prodejů není).
 - **Ověřeno 2026-11-20 (skutečné requesty):**
   - Hlavička `Authorization: Bearer <token>` funguje (HTTP 200). Dokumentace v příkladech posílá `access_token` jako parametr.
-  - `GET /v2/sales` (i s `?after=2010-01-01`) vrací `{"success": true, "sales": []}`: na Gumroadu zatím **není žádný prodej**.
+  - `GET /v2/sales` do 2026-11-20 vracel prázdný seznam (žádný prodej).
     Bez dalších stránek v odpovědi `next_page_url` / `next_page_key` vůbec nejsou.
   - `GET /v2/products`: 1 produkt, `price` je celé číslo v centech (`1499`), `currency` malými písmeny (`"usd"`),
     `sales_count` int, `sales_usd_cents` je **float** (do DB ne jako float).
 
-### `GET /v2/sales` – podle dokumentace a zdrojového kódu (neověřeno na skutečném prodeji)
+### Ověřeno na skutečném (zkušebním) prodeji 2026-11-20
+
+Vítek koupil vlastní produkt přes slevový kód (platba v CZK). Vzorek odpovědi: `data/private/gumroad_sample.json`.
+
+- Struktura odpovídá dokumentaci níže: `price` int (150), `gumroad_fee` int, `created_at` `YYYY-MM-DDTHH:MM:SSZ`,
+  `currency` `"usd"`, `refunded` / `partially_refunded` / `chargedback` jsou přítomné (bool).
+- **Poplatek sedí se vzorcem** přímého prodeje: round(150 × 12,9 %) + 80 = **99** centů.
+- `tax_cents` (32) je DPH navíc a **není v `price`**; Vítkův příjem se z ní nepočítá.
+- Kupující platil v CZK → přišel `buyer_presentment` (`currency: "czk"`, `total_cents` včetně DPH, `fx_rate` jako text).
+  Částky v USD (`price`, `gumroad_fee`) zůstávají kanonické.
+- Navíc oproti ukázce v dokumentaci: `offer_code` (`code`, `name`, `displayed_amount_off`), `invoice_url`, `url_params`,
+  `state`, `is_bundle_purchase`… – pro nás nepodstatné, zůstávají v `raw`.
+- `product_id` prodeje = `id` produktu z `/v2/products` → vhodné jako `ref` v katalogu (M2).
+- Bez dalších stránek `next_page_key` v odpovědi není (stránkování na skutečných datech zatím neověřeno – 1 prodej).
+- Refund zatím neověřen.
+
+### `GET /v2/sales` – podle dokumentace a zdrojového kódu
 
 Vyžaduje scope `view_sales`.
 

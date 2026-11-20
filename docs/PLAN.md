@@ -3,7 +3,7 @@
 | Milník | Co vznikne | Hotovo, když |
 |---|---|---|
 | **M0: Kostra** | repo, pravidla, plán, spec M1 | ✅ |
-| **M1: Gumroad** | stažení prodejů přes API do SQLite | `uv run python -m sales_tracker sync gumroad` stáhne skutečné prodeje, druhé spuštění nepřidá duplicity, testy na ukázkových datech projdou |
+| **M1: Gumroad** ✅ | stažení prodejů přes API do SQLite | `uv run python -m sales_tracker sync gumroad` stáhne skutečné prodeje, druhé spuštění nepřidá duplicity, testy na ukázkových datech projdou |
 | **M2: Katalog produktů** | `data/private/katalog.yaml` (Vítkovy produkty + jejich ID/názvy na každém marketplace), párování prodejů na produkt | každý prodej v DB má přiřazený produkt, nespárované se hlásí |
 | **M3: Fab** | import měsíčních CSV reportů s validací | report se načte, vadné řádky se nahlásí, opakovaný import nevytvoří duplicity |
 | **M4: Cosmos + CGTrader** | Cosmos z webu (po dohodě s Vítkem), CGTrader podle přístupu k API | prodeje z obou jsou v DB |
