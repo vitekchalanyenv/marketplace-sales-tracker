@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Tajemství
+.env
+
+# Skutečná data – NIKDY do gitu
+data/private/
+*.db
+*.sqlite
+*.sqlite3
+
+# Reporty stažené z marketplaces (mimo vymyšlená ukázková data)
+*.csv
+!data/sample/*.csv
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
