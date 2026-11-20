@@ -78,13 +78,23 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
 - Částka refundu v centech v odpovědi přímo není. Dá se spočítat jako `price` − `amount_refundable_in_currency` (převedené
   na centy), ale jen u USD produktů. Pro M1 stačí `refunded` / `partially_refunded`.
 
-## Fab – měsíční CSV report 🟠
+## Fab – denní CSV report 🟠
 
-- Veřejné API není. Report se stahuje ručně v sekci prodejce (měsíčně).
-- Sloupce (začátek, zbytek doplnit): `Day, Source, Listing Title, License, Base Price, Total VAT, Total Tax, Net Units, Net Sales, …`
-- **K ověření v M3:** všechny sloupce, oddělovač, kódování, formát data a čísel, jak vypadá refund.
-- Pozor: report je **agregovaný po dnech** (`Day`, `Net Units`), ne po transakcích. Unikátní klíč bude jiný
-  než u ostatních (např. den + listing + licence + source).
+- Veřejné API není. Report se stahuje ručně v sekci prodejce za libovolné období.
+- **Ověřeno na skutečném souboru 2026-11-20** (leží v `data/private/fab/`, tady jen formát):
+  - název `<od>_<do>_fab_daily_sales_report.csv`, UTF-8 bez BOM, čárka, CRLF, hlavička na 1. řádku,
+  - přesně 9 sloupců: `Day, Source, Listing Title, License, Base Price, Total VAT, Total Tax, Net Units, Net Sales`,
+  - `Day` = `YYYY-MM-DD` bez času a zóny (zóna neznámá),
+  - částky s tečkou, bez pevného počtu desetin (`7.5`, `12.0`), max. 2 desetinná místa, bez měny,
+  - `Net Sales = Base Price × Net Units`; `Net Units` může být > 1,
+  - **refund = samostatný záporný řádek** v den refundu (`Net Units -1`, `Net Sales` záporné),
+  - stejný listing má v různé dny různé `Base Price` (slevy),
+  - `Source` zatím jen `Fab`, `License` `Personal` / `Professional`,
+  - `Total VAT`, `Total Tax` jsou daně navíc, nejsou v `Net Sales`,
+  - **poplatek Fabu v reportu není** (`Net Sales` je před poplatkem).
+- Report je **agregovaný po dnech** (`Day`, `Net Units`), ne po transakcích. Klíč řádku: den + source + listing +
+  licence + cena (návrh M3).
+- **Neověřeno:** měna (předpoklad USD), časová zóna `Day`, výše poplatku Fabu, jestli Fab zpětně mění už vydané dny.
 
 ## Cosmos (Leartes) – jen webová tabulka 🟠
 

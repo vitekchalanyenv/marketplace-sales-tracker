@@ -13,11 +13,12 @@
 
 ## Rozpracováno
 
-- (nic)
+- M3 – Fab: návrh spec `docs/spec/M3-fab.md` (2026-11-20) podle skutečného reportu v `data/private/fab/`;
+  čeká na schválení a otázky 1–6.
 
 ## Čeká na Vítka
 
-- (M3) Poslat všechny názvy sloupců Fab CSV reportu.
+- Schválit `docs/spec/M3-fab.md` a odpovědět na otázky 1–6 (refundy, poplatek Fabu, quantity, zóna, měna, stahování).
 - (M4) Volitelně požádat o CGTrader API.
 
 ## Otevřené otázky
