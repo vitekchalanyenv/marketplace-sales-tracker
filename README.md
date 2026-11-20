@@ -31,7 +31,14 @@ Real sales data never leaves the local machine. The repository contains only **s
 ```powershell
 uv sync
 uv run pytest
+
+# copy .env.example to .env and fill in GUMROAD_ACCESS_TOKEN, then:
+uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days
+uv run python -m sales_tracker sync gumroad --since 2026-01-01
 ```
+
+Sales are stored in `data/private/sales.db` (SQLite, git-ignored). Running a sync twice never creates duplicates;
+a changed sale (e.g. a refund) is updated in place.
 
 Built with AI coding agents (Claude Code). Mistakes the AI made and how they were caught are logged in
 [`docs/AI_CHYBY.md`](docs/AI_CHYBY.md).
