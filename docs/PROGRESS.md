@@ -13,9 +13,13 @@
     a zdrojového kódu Gumroadu).
   - Kritérium hotovosti „stáhne skutečné prodeje“ zůstává otevřené do prvního skutečného prodeje (nebo testovacího
     nákupu přes 100% slevový kód). Pak porovnat odpověď se `ZDROJE.md` a uložit vzorek do `data/private/`.
+  - 2026-11-20: Vítek – zkušební nákup za 0 na Gumroadu asi nejde a na prodej se může čekat dlouho → M1 zůstává
+    otevřené (jen ověření na skutečném prodeji), pokračujeme M2.
+- M2 – Katalog produktů: návrh spec `docs/spec/M2-katalog.md` (2026-11-20), čeká na schválení a otázky 1–3.
 
 ## Čeká na Vítka
 
+- Schválit `docs/spec/M2-katalog.md` a odpovědět na otázky 1–3 (co je jeden produkt, balíčky, seznam produktů).
 - (M3) Poslat všechny názvy sloupců Fab CSV reportu.
 - (M4) Volitelně požádat o CGTrader API.
 

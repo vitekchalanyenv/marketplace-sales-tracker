@@ -1,0 +1,21 @@
+# Vymyšlený ukázkový katalog (formát viz docs/spec/M2-katalog.md).
+# Skutečný katalog patří do data/private/katalog.yaml.
+products:
+  - key: medieval-village
+    name: Medieval Village Environment
+    listings:
+      gumroad:
+        - ref: "SAMPLE-prod-medieval-village=="
+      fab:
+        - title: "Medieval Village Environment - UE5"
+        - title: "Medieval Village (old listing)"
+      cosmos:
+        - ref: sample-medieval-village
+
+  - key: scifi-hangar
+    name: Sci-Fi Hangar Environment
+    listings:
+      gumroad:
+        - ref: "SAMPLE-prod-scifi-hangar=="
+      fab:
+        - title: "Sci-Fi Hangar Environment"
