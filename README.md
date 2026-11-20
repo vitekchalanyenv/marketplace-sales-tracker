@@ -35,10 +35,15 @@ uv run pytest
 # copy .env.example to .env and fill in GUMROAD_ACCESS_TOKEN, then:
 uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days
 uv run python -m sales_tracker sync gumroad --since 2026-01-01
+
+# product catalog (data/private/katalog.yaml, see data/sample/katalog.yaml)
+uv run python -m sales_tracker catalog check   # validate + list unmatched sales with ready-to-paste YAML
+uv run python -m sales_tracker catalog match   # re-assign every sale to a product
 ```
 
 Sales are stored in `data/private/sales.db` (SQLite, git-ignored). Running a sync twice never creates duplicates;
-a changed sale (e.g. a refund) is updated in place.
+a changed sale (e.g. a refund) is updated in place. Each sale is matched to a catalog product by exact listing ID or
+title only; similar names are offered as suggestions, never matched automatically.
 
 Built with AI coding agents (Claude Code). Mistakes the AI made and how they were caught are logged in
 [`docs/AI_CHYBY.md`](docs/AI_CHYBY.md).

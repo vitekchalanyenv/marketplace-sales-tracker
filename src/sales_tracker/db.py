@@ -2,7 +2,7 @@
 
 import json
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import UTC
 from pathlib import Path
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS sales (
     currency      TEXT    NOT NULL,
     status        TEXT    NOT NULL,
     raw           TEXT    NOT NULL,  -- original record as JSON
+    product_key   TEXT,              -- catalog product (M2); NULL = unmatched
     first_seen_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     PRIMARY KEY (marketplace, external_id)
@@ -43,7 +44,16 @@ def connect(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Bring databases created by older versions up to the current schema."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(sales)")}
+    if "product_key" not in columns:  # added in M2
+        with conn:
+            conn.execute("ALTER TABLE sales ADD COLUMN product_key TEXT")
 
 
 def _row(sale: Sale) -> dict:
@@ -94,3 +104,48 @@ def has_sales(conn: sqlite3.Connection, marketplace: str) -> bool:
         conn.execute("SELECT 1 FROM sales WHERE marketplace = ? LIMIT 1", (marketplace,)).fetchone()
         is not None
     )
+
+
+@dataclass(frozen=True)
+class MatchResult:
+    matched: int
+    unmatched: int
+
+
+Matcher = Callable[[str, str | None, str | None], str | None]
+
+
+def assign_products(conn: sqlite3.Connection, match: Matcher) -> MatchResult:
+    """Recompute product_key for every sale (also back to NULL). One transaction."""
+    rows = conn.execute(
+        "SELECT marketplace, external_id, product_ref, product_title, product_key FROM sales"
+    ).fetchall()
+    matched = 0
+    with conn:
+        for marketplace, external_id, ref, title, current in rows:
+            key = match(marketplace, ref, title)
+            matched += key is not None
+            if key != current:
+                conn.execute(
+                    "UPDATE sales SET product_key = ? WHERE marketplace = ? AND external_id = ?",
+                    (key, marketplace, external_id),
+                )
+    return MatchResult(matched=matched, unmatched=len(rows) - matched)
+
+
+@dataclass(frozen=True)
+class UnmatchedListing:
+    marketplace: str
+    ref: str | None
+    title: str | None
+    sales: int
+
+
+def unmatched_listings(conn: sqlite3.Connection, match: Matcher) -> list[UnmatchedListing]:
+    """Listings the given matcher cannot place, with sale counts. Read-only."""
+    rows = conn.execute(
+        "SELECT marketplace, product_ref, product_title, COUNT(*) FROM sales "
+        "GROUP BY marketplace, product_ref, product_title "
+        "ORDER BY marketplace, COUNT(*) DESC, product_title"
+    ).fetchall()
+    return [UnmatchedListing(*row) for row in rows if match(row[0], row[1], row[2]) is None]

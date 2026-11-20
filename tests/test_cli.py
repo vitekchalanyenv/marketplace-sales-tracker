@@ -27,6 +27,7 @@ def run(tmp_path, transport, since=None):
         transport=transport,
         sleep=lambda s: None,
         today=TODAY,
+        catalog_path=tmp_path / "katalog-neexistuje.yaml",  # nikdy skutečný data/private
     )
 
 

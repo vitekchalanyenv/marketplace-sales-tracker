@@ -1,6 +1,8 @@
 # Specifikace M2: Katalog produktů a párování prodejů
 
-**Stav:** návrh 2026-11-20, čeká na schválení Vítkem (a odpovědi na otázky na konci).
+**Stav:** schváleno Vítkem 2026-11-20 („pro teď“), otázky 1–3 rozhodnuty (viz konec).
+**Implementace:** napsáno, testy prošly (111 celkem), ověřeno na skutečných datech: Vítkův katalog (5 produktů) projde
+`catalog check`, jediný skutečný prodej (Gumroad) se spároval. Názvy listingů na Fab/Cosmos/CGTrader neověřené (M3/M4).
 
 ## Cíl
 
@@ -104,14 +106,24 @@ Výsledek se uloží do nového sloupce `sales.product_key` (NULL = nespárovan�
 `pyyaml` (čtení YAML). Alternativa bez závislosti by byl TOML (`tomllib` je ve standardní knihovně), ale `PLAN.md`
 počítá s YAML a ten se ručně píše pohodlněji.
 
-## K rozhodnutí (Vítek)
+## Rozhodnutí Vítka (2026-11-20)
 
-1. **Co je „jeden produkt“?** Když prodáváš stejné prostředí jako UE projekt a zvlášť třeba jako Unity / FBX verzi,
-   je to jeden produkt (víc listingů), nebo dva?
-2. **Balíčky (bundles):** prodáváš někde balíček víc prostředí? Návrh pro M2: balíček = samostatný produkt v katalogu
-   (rozpočítání tržby na jednotlivé produkty až někdy později, pokud vůbec).
-3. **Seznam produktů:** pošleš seznam svých produktů a jejich názvy / odkazy na jednotlivých marketplaces? Gumroad můžu
-   načíst sám přes API (`/v2/products`, 1 produkt), ostatní zatím ne.
+1. **Produkt = 1 listing na marketplace.** Verze (UE / Unity / FBX) se neprodávají zvlášť. Katalog přesto dovolí
+   víc listingů na jednom marketplace (pro případ přejmenování listingu), ale běžně bude jeden.
+2. **Balíček** (na Fabu je jeden) = samostatný produkt v katalogu. Rozpočítání na jednotlivé produkty se nedělá.
+3. **Seznam produktů** (podle Vítka):
+
+| Produkt | Fab | Cosmos | CGTrader | Gumroad |
+|---|---|---|---|---|
+| Produkt A | ✔ | ✔ | | |
+| Produkt B | ✔ | ✔ | ✔ | |
+| Produkt C | ✔ | ✔ | ✔ | ✔ (ověřeno přes API) |
+| Bundle (A + B + C) | ✔ | | | |
+| Produkt D | | | ✔ | |
+
+Přesné názvy listingů jsou jen v `data/private/katalog.yaml`. Fab, Cosmos a CGTrader jsou zatím zapsané
+**podle názvu od Vítka** (ID/slugy doplníme, až budou skutečná data v M3/M4); skutečné názvy v reportech se můžou
+lišit, to odhalí `catalog check`.
 
 ## Mimo rozsah M2
 

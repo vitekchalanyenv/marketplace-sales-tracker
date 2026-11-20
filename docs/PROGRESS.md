@@ -6,10 +6,14 @@
 - 2026-11-20 – M1: Gumroad → SQLite. Napsáno, testy prošly (64), **ověřeno na skutečném prodeji** (zkušební nákup
   Vítka přes slevový kód): staženo 1, druhý běh 0 nových, `net` sedí se vzorcem poplatků.
   Na skutečných datech neověřeno: refund, stránkování (>100 prodejů).
+- 2026-11-20 – M2: katalog produktů + párování (`catalog check`, `catalog match`, párování po `sync`). Napsáno,
+  testy prošly (111), ověřeno na skutečných datech: Vítkův `data/private/katalog.yaml` (5 produktů vč. bundle) je
+  bez chyb, jediný skutečný prodej (Gumroad) spárován. Názvy listingů Fab/Cosmos/CGTrader jsou od Vítka a neověřené,
+  ukáže je `catalog check` po importu v M3/M4.
 
 ## Rozpracováno
 
-- M2 – Katalog produktů: spec `docs/spec/M2-katalog.md` schválena 2026-11-20, otázky 1–3 rozhodnuty; implementace běží.
+- (nic)
 
 ## Čeká na Vítka
 
@@ -28,6 +32,8 @@
 
 ## Rozhodnutí
 
+- 2026-11-20 – Katalog: produkt = 1 listing na marketplace (verze se neprodávají zvlášť); Fab bundle = samostatný produkt.
+- 2026-11-20 – Párování jen přesně (ID, pak normalizovaný název); podobnost jen jako návrh.
 - 2026-11-20 – Společný model má pole `status` (sold / refunded / partially_refunded / chargeback); refundy u všech marketplaces.
 - 2026-11-20 – Gumroad sync bez `--since` stahuje posledních 30 dní (kvůli refundům).
 - 2026-11-20 – Gumroad `net_cents = price − gumroad_fee` (fee obsahuje i processing; ověřeno v kódu Gumroadu).
