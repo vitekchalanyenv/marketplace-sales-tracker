@@ -1,41 +1,47 @@
 # Předání
 
-**Relace:** 2026-11-20 až 2026-11-21 (M1 dokončeno, M2, M3)
+**Relace:** 2026-11-21 (M4: průzkum Cosmos + CGTrader, agent pro Cosmos)
 
 ## Kde jsme
 
-- **M1 Gumroad ✅** – ověřeno na skutečném (zkušebním) prodeji Vítka: struktura odpovědi i vzorec poplatků sedí.
-  Neověřeno na skutečných datech: refund, stránkování (>100 prodejů).
-- **M2 Katalog ✅** – `data/private/katalog.yaml` (5 produktů vč. Fab bundle), `catalog check` / `catalog match`,
-  párování po každém `sync` / `import`. Jen přesné párování (ID, pak normalizovaný název), podobnost = návrh.
-- **M3 Fab ✅** – `import fab [soubor]` (bez cesty všechna CSV z `data/private/fab/`), ověřeno na skutečném reportu
-  1. 10. – 20. 11. 2026: součty sedí s CSV, opakovaný import 0 nových, vše spárováno.
-- DB `data/private/sales.db`: všechny záznamy spárované. Model má `status` a `quantity`.
-- Testy: **157 passed**, `ruff check` čistý (2026-11-21).
-- Kód: `src/sales_tracker/` – `models.py`, `db.py` (migrace sloupců), `gumroad.py`, `fab.py`, `catalog.py`, `cli.py`.
+- **M1 Gumroad ✅, M2 Katalog ✅, M3 Fab ✅** (viz `docs/PROGRESS.md`).
+- **M4a Cosmos – agent v prohlížeči hotový:** `sync cosmos` (Playwright + nainstalovaný Chrome, vlastní profil
+  `data/private/browser/cosmos/`, headless). Zachytí JSON, který si stránka Sales sama načte z
+  `api.publisher.leartesstudios.com/sales`; token ani heslo neprochází kódem. Ověřeno na skutečném účtu:
+  všechny transakce, tržba i payout sedí na cent, druhý běh 0 nových a zastaví na 1. stránce.
+  - Jádro `src/sales_tracker/cosmos.py` (validace, dělení payoutu podle zaplacených částek, stránkování),
+    tenká vrstva `cosmos_browser.py`, pokus `spikes/cosmos_playwright.py`.
+  - Přihlášení: `sync cosmos --login` (Vítek sám, reCAPTCHA).
+- **M4b CGTrader:** průzkum hotový (`docs/ZDROJE.md`). Report z My Sales chodí **e-mailem**; Vítek ho nahraje.
+  O API požádáno, čeká se.
+- DB: všechny záznamy spárované s katalogem.
+- Testy **196 passed**, `ruff check` čistý (2026-11-21).
 
 ## Co udělat dál
 
-1. **M4 – Cosmos + CGTrader.** Než se cokoli automatizuje v prohlížeči, zeptat se Vítka (pravidlo 7).
-   - Cosmos: jen webová tabulka (Reports → Sales, 10 / stránka), bez exportu. Možnosti: ruční kopie tabulky do souboru,
-     nebo zjistit, jestli web volá vlastní JSON API (jen s Vítkovým souhlasem, šetrně).
-   - CGTrader: zjistit, jestli Vítek má / chce API přístup; jinak export / ruční kopie z My Sales.
-2. Vyřešit zkušební prodej z Gumroadu v DB (refund na Gumroadu → ověří i refund, nebo označit jako test).
+1. **Ruční kopie Cosmosu** (cesta 2): až Vítek uloží `data/private/cosmos/vzorek.txt`, napsat parser `from_paste`
+   podle skutečného vzorku; multi-produktové transakce dělit podle `price` z katalogu (katalog `price` ještě neumí).
+2. **CGTrader (M4b):** až bude report z e-mailu v `data/private/cgtrader/`, prozkoumat formát a napsat spec + import.
+3. **M5 – denní agent** (požadavek Vítka): každý den sám spustí `sync gumroad`, `sync cosmos` a importy nových
+   souborů a **dá vědět, když něco selže** (hlavně vypršené přihlášení Cosmosu). Nejdřív spec a otázky:
+   jak notifikovat, kdy běžet, co když je počítač vypnutý; souvisí s týdenním shrnutím.
 
 ## Otevřené otázky pro Vítka
 
-- M4: jak číst Cosmos a CGTrader (viz výše).
-- Měny pro týdenní shrnutí (USD, nebo CZK?) a zdroj kurzů – před M5.
+- M5: kanál upozornění (notifikace Windows / e-mail / jiné), čas běhu.
+- Měny pro týdenní shrnutí (USD, nebo CZK?) a zdroj kurzů.
+- Refund na Cosmosu: zatím žádný nebyl → formát `refund_details` neznámý (agent ho uloží jako refund a upozorní).
 
 ## Pozor
 
 - HTTPS jen přes úložiště certifikátů Windows: Python `ssl.create_default_context()`, git `schannel`,
   `uv add --system-certs`.
-- Do veřejného repa (spec, ZDROJE) **jen formát a vymyšlené příklady**, nikdy skutečné řádky reportů.
-- Testy nikdy nesahají na `data/private/` (cesty předávat do `tmp_path`).
-- `.env` načítat explicitní cestou z cwd.
-- V heredocu s Pythonem pozor na `\n` / `\b` v řetězcích (dvakrát rozbilo soubor) – na víceřádkové úpravy kódu
-  raději nástroj Edit.
+- Do veřejného repa (spec, ZDROJE) **jen formát a vymyšlené příklady**, nikdy skutečné řádky, částky ani časy prodejů.
+- Testy nikdy nesahají na `data/private/` ani na síť / prohlížeč.
+- Na tvrzení „X neexistuje“ (např. API) sledovat celou síť po načtení stránky, ne jen jednu doménu.
+- Ruční requesty s Vítkovým tokenem z prohlížeče jsou v tomto prostředí blokované – a správně; Cosmos jen přes
+  Playwright profil, kde přihlášení drží prohlížeč.
+- V heredocu s Pythonem pozor na `\n` / `\b`; víceřádkové úpravy kódu raději nástrojem Edit.
 
 ## Jak pracovat
 

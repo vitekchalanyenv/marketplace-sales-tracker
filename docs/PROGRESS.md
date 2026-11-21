@@ -31,6 +31,9 @@
 
 ## Otevřené otázky
 
+- M5 (požadavek Vítka 2026-11-21): **denní agent**, který sám spouští stahování (Gumroad, Cosmos, importy souborů)
+  a **dá vědět, když něco selže** (vypršené přihlášení Cosmosu, chybný report, výpadek). Upřesnit: jak dávat vědět
+  (notifikace Windows / e-mail / jinak), kdy běžet, co dělat, když je počítač vypnutý.
 - Měny napříč marketplaces: do jaké měny převádět pro týdenní shrnutí (USD? CZK, protože výplaty z Gumroadu jdou v CZK?)
   a odkud brát kurzy (např. ČNB)? Rozhodnout před milníkem se shrnutím.
 
