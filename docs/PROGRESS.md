@@ -17,11 +17,14 @@
 
 ## Rozpracováno
 
-- (nic)
+- M4a – Cosmos: návrh spec `docs/spec/M4-cosmos.md` (2026-11-21), čeká na schválení a otázky 1–5.
+- M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
+  Vítek požádal o API (2026-11-21).
 
 ## Čeká na Vítka
 
-- (M4) Volitelně požádat o CGTrader API.
+- M4a: schválit spec Cosmos a odpovědět na otázky 1–5 (vzorek kopie, ceny, kredity, refundy, Playwright).
+- M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
 
 ## Otevřené otázky
 
@@ -36,6 +39,9 @@
 
 ## Rozhodnutí
 
+- 2026-11-21 – Cosmos: obě cesty (ruční kopie tabulky + agent v prohlížeči, jednou denně), společné jádro;
+  Vítek souhlasí s automatizací prohlížeče (pravidlo 7). Transakce s víc produkty se dělí podle cen produktů.
+  Virtual Credits se počítají jako USD.
 - 2026-11-21 – Fab: refund = samostatný záporný záznam (`refunded`); `net = 88 % Net Sales`; `Day` v Europe/Prague;
   měna USD; společný model má `quantity`.
 - 2026-11-20 – Katalog: produkt = 1 listing na marketplace (verze se neprodávají zvlášť); Fab bundle = samostatný produkt.
