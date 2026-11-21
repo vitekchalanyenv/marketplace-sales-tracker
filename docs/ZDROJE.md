@@ -110,11 +110,21 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
     = text `Virtual Credits` (bez částky v USD).
   - Podíl prodejce kolísá (Payout / Amount není konstantní) → `net` brát z `Payout`.
   - `Date` = `YYYY-MM-DD HH:MM`, místní čas Vítka (Europe/Prague, rozhodnuto 2026-11-20).
-  - Stránkování 10 / stránka (výběr velikosti stránky existuje, možnosti neprohlédnuty), celkový počet dole.
-  - Filtr podle data a vyhledávání. **Žádný export.**
-  - **Žádné JSON API:** přechod na další stránku nevyvolal žádný XHR/fetch, data posílá server rovnou v HTML.
-  - Dashboard má i „Refund Requests“ (zatím neprohlédnuto).
-- **K rozhodnutí v M4:** ruční kopie tabulky, nebo automatizace prohlížeče (jen s Vítkovým souhlasem, šetrně).
+  - Stránkování 10 / stránka (jiná velikost na výběr není), celkový počet dole. Filtr podle data, vyhledávání.
+    **Žádný export.**
+  - **Neveřejné JSON API** (opraveno 2026-11-21, nejdřív jsem ho přehlédl): stránka je Next.js, HTML je jen kostra
+    a tabulku plní `GET https://api.publisher.leartesstudios.com/sales?page=1&perPage=10`. Autentizace **tokenem
+    z `localStorage`** (ne cookie), bez něj `401`. Strukturu odpovědi s daty jsem neověřil.
+  - Přihlášení má reCAPTCHA. Před webem je Cloudflare.
+  - Text tabulky (jak ho vidí prohlížeč): na každý prodej řádek `#<ID>`, pak pro každý produkt dva řádky
+    (název, slug) a nakonec řádek `<Amount> USD <Payout> USD <YYYY-MM-DD HH:MM>`. U Virtual Credits
+    `<Amount> Virtual Credits <datum>`. Přesný tvar **ručně zkopírovaného** textu ověří vzorek od Vítka.
+  - Ceny produktů nejsou v publisher portálu, ale na veřejné stránce produktu
+    `cosmos.leartesstudios.com/environments/<slug>`. Licence `Individual` / `Studio` / `Enterprise`
+    a slevové akce, takže zaplacená částka se od ceníkové liší.
+  - **Refund Requests** (`/refund-requests`): sloupce `ID, Customer, Products, Reason, Status, Date, Actions`.
+    Zatím žádný požadavek, takže jak se refund projeví v Sales, nevíme.
+- Možnosti automatizace: `docs/spec/M4-prohlizec-moznosti.md`.
 
 ## CGTrader – web (My Sales) + API na žádost 🟡
 

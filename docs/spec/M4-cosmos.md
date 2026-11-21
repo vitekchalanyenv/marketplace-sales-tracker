@@ -1,6 +1,7 @@
 # Specifikace M4a: Prodeje z Cosmosu (Leartes)
 
-**Stav:** návrh 2026-11-21, čeká na schválení Vítkem a odpovědi na otázky na konci.
+**Stav:** návrh 2026-11-21; otázky 1–4 rozhodnuty, cesta 2 (automat) čeká na rozhodnutí podle
+`docs/spec/M4-prohlizec-moznosti.md`. Cesta 1 (ruční kopie) a společné jádro jsou připravené k implementaci, jakmile bude vzorek.
 CGTrader bude mít vlastní spec (M4b), až bude známý formát reportu z e-mailu, případně API.
 
 ## Cíl
@@ -22,7 +23,7 @@ prohlížeč (Playwright) ─► čtení DOM ──┘
 ## Co víme o Cosmosu (`docs/ZDROJE.md`, průzkum 2026-11-21)
 
 - Portál `publisher.leartesstudios.com/sales`, tabulka: `Transaction ID`, `Products`, `Amount`, `Payout`, `Date`.
-- Bez exportu a bez JSON API (data přicházejí rovnou v HTML).
+- Bez exportu. Stránka čte neveřejné JSON API s tokenem v prohlížeči (viz podklad k možnostem).
 - Transakce může mít **víc produktů**; částky jsou jen za celou transakci.
 - U produktu je název a **slug** → párování přes slug.
 - Částky `"<číslo> USD"`, výjimka **Virtual Credits** (částka bez měny, payout jen text).
@@ -68,16 +69,12 @@ prohlížeč (Playwright) ─► čtení DOM ──┘
 
 ## Cesta 2: agent v prohlížeči – `sync cosmos`
 
-- **Playwright** (Chromium) s **vlastním trvalým profilem** v `data/private/browser/cosmos/` (mimo git).
-  Vítek se v něm **jednou přihlásí sám** (`sync cosmos --login` otevře okno a počká). Heslo nikdy neprochází kódem,
-  `.env` ani logem. Uložená session cookies jsou jen v tom profilu.
-- Běh: otevře `/sales`, přečte řádky tabulky z DOM a po stránkách jde dál, **dokud nenarazí na stránku, kde už jsou
-  všechny transakce v DB** (běžně stačí 1. stránka). Mezi stránkami pauza 3–5 s, max. 1 běh denně
-  (časování a plánovač Windows až v M5). Prohlížeč jen čte: žádné klikání mimo stránkování.
-- Když session vyprší (přesměrování na přihlášení) → hláška „přihlas se: sync cosmos --login“, nic se neuloží.
-- Když se změní struktura stránky (nenajde tabulku nebo sloupce) → hláška a **screenshot do `data/private/`**,
-  nic se neuloží.
-- Selektory jsou na jednom místě, aby oprava po změně webu byla jedna úprava.
+Způsob se rozhodne podle `docs/spec/M4-prohlizec-moznosti.md` (doporučení: Playwright s vlastním profilem, který
+zachytí JSON z API stránky; nejdřív krátký pokus). Pevně platí:
+- přihlašuje se vždy Vítek sám (reCAPTCHA), heslo ani token neprochází kódem, `.env` ani logem,
+- nejvýš 1 běh denně, pauzy mezi stránkami, jen čtení,
+- výstupem jsou stejné `CosmosRow` jako u ruční kopie, dál běží společné jádro,
+- když session vyprší nebo se změní web → hláška, nic se neuloží.
 
 ## Chyby a výpis
 
@@ -97,17 +94,25 @@ Přeskočené transakce: ID + důvod (bez dalších údajů).
 
 `playwright` (+ jednorázově `uv run playwright install chromium`, cca 150 MB). Jen pro cestu 2.
 
-## K rozhodnutí (Vítek)
+## Rozhodnutí Vítka (2026-11-21)
 
-1. **Vzorek ruční kopie:** zkopíruješ jednou tabulku Sales (Ctrl+A / označení tabulky, Ctrl+C) do
-   `data/private/cosmos/vzorek.txt`? Podle něj napíšu parser.
-2. **Ceny na Cosmosu** pro rozdělení: pošleš ceny svých 3 produktů na Cosmosu, nebo si je mám přečíst ze stránky
-   Products v Cosmosu (jen čtení)?
-3. **Virtual Credits – čistý příjem:** částku v kreditech beru jako USD (`gross`). Payout v USD ale chybí.
-   Návrh: `net` nechat prázdný (neznámý). Nebo víš, kolik za kreditní prodej skutečně dostaneš?
-4. **Refundy:** v Cosmosu je sekce Refund Requests. Mám se na ni podívat (jen čtení) a refundy zahrnout do M4a,
-   nebo je zatím vynechat?
-5. **Playwright:** souhlasíš s novou závislostí a stažením Chromia (~150 MB)?
+1. **Vzorek ruční kopie** pořídí Vítek podle návodu (viz níže).
+2. **Ceny** přečteny z veřejných stránek produktů (licence Individual, ceník bez slevy). Uloží se do soukromého
+   katalogu jako `price` u listingu na Cosmosu. Katalog musí `price` nově podporovat (zatím jen `ref` / `title`).
+3. **Virtual Credits:** částka = `gross` i `net` (celé jako payout), měna USD.
+4. **Refundy:** Refund Requests prohlédnuto (zatím prázdné, sloupce v ZDROJE). Zahrnou se do agenta, až bude vidět,
+   jak se refund projeví.
+5. **Playwright:** zatím nerozhodnuto, Vítek chce víc podrobností → `docs/spec/M4-prohlizec-moznosti.md`.
+
+## Návod: vzorek ruční kopie
+
+1. V Chromu otevři `publisher.leartesstudios.com/sales`.
+2. Klikni kamkoli do stránky, **Ctrl+A** (označí celou stránku) a **Ctrl+C**.
+3. Otevři Poznámkový blok a **Ctrl+V**.
+4. V Cosmosu přejdi na stránku 2 tabulky, znovu Ctrl+A a Ctrl+C a v Poznámkovém bloku vlož na konec (Ctrl+End, Ctrl+V).
+5. Ulož jako `data/private/cosmos/vzorek.txt` (kódování UTF-8, ve Windows 11 je výchozí).
+
+Menu, záhlaví a patička stránky v textu nevadí, parser si najde jen tabulku.
 
 ## Mimo rozsah M4a
 

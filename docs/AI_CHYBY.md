@@ -13,6 +13,10 @@ Chyby, které AI (Claude Code) v projektu udělala a které se podařilo chytit.
 | 2026-11-20 | M2 | Úryvek YAML pro nespárovaný listing byl ve výpisu odsazený o 2 mezery víc, po vložení do katalogu by YAML měl špatnou strukturu. Testy kontrolovaly jen obsah, ne odsazení. | Ruční prohlídka výstupu `catalog check` na vzorových datech. | Odsazení opraveno a hlídá ho test. |
 | 2026-11-21 | M3 | První verze spec M3 (veřejné repo) obsahovala skutečné řádky Vítkova Fab reportu: data, ceny, refund, počet řádků a součty. | Vlastní kontrola před commitem. | Ve spec a ZDROJE jen popis formátu s vymyšlenými příklady; skutečná data jen v `data/private/`. |
 | 2026-11-21 | M3 | Ve spec jsem uvedl „Fab veřejně uvádí podíl tvůrce 88 %“, i když jsem to měl jen z paměti, ne z ověřeného zdroje. | Vlastní kontrola proti pravidlu „nevymýšlej“. | Přepsáno na „z paměti, neověřeno“. Hodnotu pak potvrdil Vítek. |
-| 2026-11-21 | M3 | Pomocná funkce v testu zapisovala CSV přes `write_text("…
-")`; Windows z toho udělal `
+| 2026-11-21 | M3 | Pomocná funkce v testu zapisovala CSV přes `write_text("…
+
+")`; Windows z toho udělal `
+
+
 ` a čísla řádků v hláškách byla dvojnásobná. | Padl test na číslo řádku. | Test zapisuje s `newline=""` (přesně CRLF jako skutečný report). Kód byl v pořádku. |
+| 2026-11-21 | M4 | Do ZDROJE jsem zapsal a commitnul, že Cosmos „nemá JSON API, data jsou rovnou v HTML“. Opíral jsem se o jediné pozorování: přepnutí stránky nevyvolalo request (stránkování je v prohlížeči), a síť jsem navíc filtroval podle domény `leartes`, takže API na jiné subdoméně by mi stejně uteklo. | Druhý pokus: stažené HTML prodeje neobsahovalo, potom načtení stránky se sledováním celé sítě ukázalo `api.publisher.leartesstudios.com/sales`. | ZDROJE opraveny; závěr „neexistuje“ dělat až po načtení stránky se sledováním celé sítě. Na tvrzení stavěla jedna otázka pro Vítka (volba ručně / automat) – rozhodnutí platí dál, ale podklad je teď přesný. |

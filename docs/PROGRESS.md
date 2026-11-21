@@ -17,13 +17,15 @@
 
 ## Rozpracováno
 
-- M4a – Cosmos: návrh spec `docs/spec/M4-cosmos.md` (2026-11-21), čeká na schválení a otázky 1–5.
+- M4a – Cosmos: spec `docs/spec/M4-cosmos.md`, otázky 1–4 rozhodnuty. Ruční kopie čeká na vzorek od Vítka;
+  automat čeká na volbu podle `docs/spec/M4-prohlizec-moznosti.md` (doporučen pokus s Playwrightem).
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
 
 ## Čeká na Vítka
 
-- M4a: schválit spec Cosmos a odpovědět na otázky 1–5 (vzorek kopie, ceny, kredity, refundy, Playwright).
+- M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
+- M4a: rozhodnout způsob automatu (`docs/spec/M4-prohlizec-moznosti.md`).
 - M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
 
 ## Otevřené otázky
