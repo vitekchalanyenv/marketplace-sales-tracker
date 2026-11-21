@@ -1,0 +1,101 @@
+{
+  "data": [
+    {
+      "id": 20005,
+      "amount": "19.9900",
+      "raw_amount": "19.9900",
+      "items": [
+        {
+          "sku": "sample-medieval-village",
+          "title": "Medieval Village Environment",
+          "type": "virtual_good",
+          "amount": "19.9900",
+          "service": "samplepublisher",
+          "quantity": 1,
+          "license": "individual",
+          "promotions": [],
+          "is_pre_order": false
+        }
+      ],
+      "created_at": "2026-01-20T10:00:00.000Z",
+      "updated_at": "2026-01-20T10:00:00.000Z",
+      "payout": {
+        "amount": "17.40",
+        "currency": "USD"
+      },
+      "refund_details": null,
+      "type": "real"
+    },
+    {
+      "id": 20004,
+      "amount": "59.9200",
+      "raw_amount": "59.9200",
+      "items": [
+        {
+          "sku": "sample-medieval-village",
+          "title": "Medieval Village Environment",
+          "type": "virtual_good",
+          "amount": "39.9200",
+          "service": "samplepublisher",
+          "quantity": 1,
+          "license": "studio",
+          "promotions": [],
+          "is_pre_order": false
+        },
+        {
+          "sku": "sample-scifi-hangar",
+          "title": "Sci-Fi Hangar Environment",
+          "type": "virtual_good",
+          "amount": "20.0000",
+          "service": "samplepublisher",
+          "quantity": 1,
+          "license": "individual",
+          "promotions": [],
+          "is_pre_order": false
+        }
+      ],
+      "created_at": "2026-01-15T23:30:00.000Z",
+      "updated_at": "2026-01-15T23:30:00.000Z",
+      "payout": {
+        "amount": "52.13",
+        "currency": "USD"
+      },
+      "refund_details": null,
+      "type": "real"
+    },
+    {
+      "id": 20003,
+      "amount": "12.5000 Virtual Credits",
+      "raw_amount": "12.5000",
+      "items": [
+        {
+          "sku": "sample-scifi-hangar",
+          "title": "Sci-Fi Hangar Environment",
+          "type": "virtual_good",
+          "amount": "12.5000",
+          "service": "samplepublisher",
+          "quantity": 1,
+          "license": "individual",
+          "promotions": [],
+          "is_pre_order": false
+        }
+      ],
+      "created_at": "2026-01-10T08:00:00.000Z",
+      "updated_at": "2026-01-10T08:00:00.000Z",
+      "payout": null,
+      "refund_details": null,
+      "type": "virtual"
+    }
+  ],
+  "meta": {
+    "total": 5,
+    "perPage": 3,
+    "currentPage": 1,
+    "lastPage": 2,
+    "firstPage": 1,
+    "firstPageUrl": "/?page=1",
+    "lastPageUrl": "/?page=2",
+    "nextPageUrl": "/?page=2",
+    "previousPageUrl": null
+  }
+}

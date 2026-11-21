@@ -157,3 +157,8 @@ def unmatched_listings(conn: sqlite3.Connection, match: Matcher) -> list[Unmatch
         "ORDER BY marketplace, COUNT(*) DESC, product_title"
     ).fetchall()
     return [UnmatchedListing(*row) for row in rows if match(row[0], row[1], row[2]) is None]
+
+
+def external_ids(conn: sqlite3.Connection, marketplace: str) -> set[str]:
+    rows = conn.execute("SELECT external_id FROM sales WHERE marketplace = ?", (marketplace,))
+    return {row[0] for row in rows}

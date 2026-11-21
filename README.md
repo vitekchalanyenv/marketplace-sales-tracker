@@ -36,6 +36,10 @@ uv run pytest
 uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days
 uv run python -m sales_tracker sync gumroad --since 2026-01-01
 
+# Cosmos: browser agent (Playwright + installed Chrome, dedicated profile, headless)
+uv run python -m sales_tracker sync cosmos --login              # once: log in yourself in the opened window
+uv run python -m sales_tracker sync cosmos
+
 # Fab: save the daily sales report CSV into data/private/fab/, then
 uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
 uv run python -m sales_tracker import fab path/to/report.csv

@@ -19,3 +19,5 @@ products:
         - ref: "SAMPLE-prod-scifi-hangar=="
       fab:
         - title: "Sci-Fi Hangar Environment"
+      cosmos:
+        - ref: sample-scifi-hangar

@@ -12,7 +12,7 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import db, fab, gumroad
+from sales_tracker import cosmos, db, fab, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
@@ -221,18 +221,98 @@ def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG
     return code
 
 
+def sync_cosmos(
+    db_path: Path,
+    load_page: Callable[[int], object],
+    *,
+    now: datetime | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+    catalog_path: Path = CATALOG_PATH,
+) -> int:
+    """Load Cosmos sales page by page (browser agent, or a fake in tests) and store them."""
+    conn = db.connect(db_path)
+    try:
+        known = {eid.split("|", 1)[0] for eid in db.external_ids(conn, cosmos.MARKETPLACE)}
+        try:
+            records = cosmos.fetch_pages(
+                load_page, known, now=now or datetime.now(UTC), sleep=sleep
+            )
+        except cosmos.SessionExpired as exc:
+            print(
+                f"Přihlášení do Cosmosu vypršelo ({exc}). Nic se neuložilo. Přihlas se: "
+                "uv run python -m sales_tracker sync cosmos --login"
+            )
+            return 1
+        except cosmos.FetchError as exc:
+            print(f"Načtení prodejů z Cosmosu selhalo: {exc}. Nic se neuložilo.")
+            return 1
+
+        sales, skipped, refunded = [], [], []
+        for record in records:
+            try:
+                tx = cosmos.from_api(record)
+                sales.extend(cosmos.to_sales(tx))
+            except cosmos.SkipTransaction as skip:
+                skipped.append(skip)
+                continue
+            if tx.refunded:
+                refunded.append(tx.id)
+        result = db.upsert_sales(conn, sales)
+    finally:
+        conn.close()
+
+    for skip in skipped:
+        print(f"Přeskočeno: transakce {skip.tx_id or '(bez ID)'} – {skip.reason}")
+    for tx_id in refunded:
+        print(
+            f"Upozornění: transakce {tx_id} má refund_details – uloženo jako refund, "
+            "formát refundu zatím neověřený, zkontroluj ho."
+        )
+    print(
+        f"Cosmos (prohlížeč): transakcí {len(records)}, záznamů {len(sales)}, nových {result.new}, "
+        f"aktualizovaných {result.updated}, přeskočeno {len(skipped)}."
+    )
+    _match_after_sync(catalog_path, db_path)
+    return 0
+
+
+def cosmos_login() -> int:
+    from sales_tracker.cosmos_browser import CosmosBrowser
+
+    print("Otevírám Chrome s profilem pro Cosmos. Přihlas se (máš 10 minut), okno se pak zavře samo.")
+    with CosmosBrowser(headless=False) as browser:
+        ok = browser.wait_for_login()
+    print("Přihlášení do Cosmosu je uložené." if ok else "Přihlášení se nepodařilo, zkus to znovu.")
+    return 0 if ok else 1
+
+
+def run_sync_cosmos() -> int:
+    from sales_tracker.cosmos_browser import CosmosBrowser
+
+    with CosmosBrowser() as browser:
+        return sync_cosmos(DB_PATH, browser.load_page)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sales_tracker")
     commands = parser.add_subparsers(dest="command", required=True)
     sync = commands.add_parser("sync", help="stáhne prodeje z marketplace")
-    sync.add_argument("marketplace", choices=["gumroad"])
-    sync.add_argument("--since", type=_date, help="stáhnout prodeje od data (YYYY-MM-DD)")
+    sync.add_argument("marketplace", choices=["gumroad", "cosmos"])
+    sync.add_argument("--since", type=_date, help="Gumroad: stáhnout prodeje od data (YYYY-MM-DD)")
+    sync.add_argument("--login", action="store_true", help="Cosmos: přihlásit se v okně prohlížeče")
     imp = commands.add_parser("import", help="naimportuje ručně stažený report")
     imp.add_argument("marketplace", choices=["fab"])
     imp.add_argument("path", nargs="?", type=Path, help=f"CSV soubor; bez něj všechna CSV z {FAB_DIR}")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
     args = parser.parse_args(argv)
+    if args.command == "sync" and args.login and args.marketplace != "cosmos":
+        parser.error("--login je jen pro cosmos")
+    if args.command == "sync" and args.since and args.marketplace != "gumroad":
+        parser.error("--since je jen pro gumroad")
+
+    if args.command == "sync" and args.marketplace == "cosmos":
+        return cosmos_login() if args.login else run_sync_cosmos()
 
     if args.command == "import":
         return import_fab(fab_report_paths(args.path, FAB_DIR), DB_PATH)

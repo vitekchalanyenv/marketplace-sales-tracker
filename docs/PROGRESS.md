@@ -17,17 +17,16 @@
 
 ## Rozpracováno
 
-- M4a – Cosmos: spec `docs/spec/M4-cosmos.md`, otázky 1–4 rozhodnuty. Ruční kopie čeká na vzorek od Vítka;
-  Pokus s Playwrightem (2026-11-21) **úspěšný**: vlastní profil drží login, headless projde Cloudflare, JSON z API
-  stránky se zachytí. Výsledky a struktura v `docs/spec/M4-prohlizec-moznosti.md`. Čeká na Vítkovo rozhodnutí
-  o cestě 2 a dělení payoutu.
+- M4a – Cosmos: **agent v prohlížeči hotový** – `sync cosmos` (Playwright, vlastní profil, headless, zachytí JSON
+  z API stránky). Napsáno, testy prošly (196), **ověřeno na skutečném účtu** 2026-11-21: všechny transakce,
+  tržba i payout sedí na cent, druhý běh 0 nových (zastaví na 1. stránce), vše spárováno.
+  Zbývá: ruční kopie (čeká na vzorek), refund (formát `refund_details` neznámý), jak dlouho vydrží přihlášení.
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
 
 ## Čeká na Vítka
 
 - M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
-- M4a: potvrdit Playwright jako cestu 2 a dělení payoutu podle `items[].amount` (místo ceníku).
 - M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
 
 ## Otevřené otázky
@@ -43,6 +42,8 @@
 
 ## Rozhodnutí
 
+- 2026-11-21 – Cosmos agent = Playwright s vlastním profilem (pokus úspěšný); payout transakce s víc produkty se dělí
+  podle skutečně zaplacených částek produktů (`items[].amount`), ne ceníku.
 - 2026-11-21 – Cosmos: obě cesty (ruční kopie tabulky + agent v prohlížeči, jednou denně), společné jádro;
   Vítek souhlasí s automatizací prohlížeče (pravidlo 7). Transakce s víc produkty se dělí podle cen produktů.
   Virtual Credits se počítají jako USD.

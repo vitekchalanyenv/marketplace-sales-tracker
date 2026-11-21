@@ -1,108 +1,112 @@
 # Specifikace M4a: Prodeje z Cosmosu (Leartes)
 
-**Stav:** návrh 2026-11-21; otázky 1–4 rozhodnuty, cesta 2 (automat) čeká na rozhodnutí podle
-`docs/spec/M4-prohlizec-moznosti.md`. Cesta 1 (ruční kopie) a společné jádro jsou připravené k implementaci, jakmile bude vzorek.
+**Stav:** schváleno Vítkem 2026-11-21. **Cesta 1 (agent v prohlížeči): napsáno, testy prošly (196 celkem),
+ověřeno na skutečném účtu** – všechny transakce, tržba i payout sedí na cent, druhý běh 0 nových a skončil na 1. stránce.
+Cesta 2 (ruční kopie) čeká na skutečný vzorek zkopírovaného textu.
 CGTrader bude mít vlastní spec (M4b), až bude známý formát reportu z e-mailu, případně API.
 
 ## Cíl
 
 Prodeje z Cosmosu se dostanou do `data/private/sales.db` **dvěma vyměnitelnými cestami** se společným jádrem:
 
-1. **Ruční kopie:** Vítek zkopíruje tabulku Reports → Sales do textového souboru a spustí `import cosmos`.
-2. **Agent v prohlížeči:** `sync cosmos` jednou denně sám projde tabulku ve Vítkově přihlášeném prohlížeči.
+1. **Agent v prohlížeči:** `sync cosmos` jednou denně sám načte prodeje ve vlastním přihlášeném profilu Chromu.
+2. **Ruční kopie:** Vítek zkopíruje tabulku Reports → Sales do textového souboru a spustí `import cosmos` (záložní cesta).
 
-Obě cesty vytvoří stejné „surové řádky“ a dál běží **stejný kód** (převod, rozdělení, uložení, párování).
-Je to zároveň ukázka modulárního návrhu do portfolia: zdroj dat jde vyměnit, logika zůstává.
+Obě cesty vytvoří stejné `CosmosTransaction` a dál běží **stejný kód** (převod, rozdělení, uložení, párování).
+Zdroj dat jde vyměnit, logika zůstává (ukázka modulárního návrhu do portfolia).
 
 ```
-ruční kopie (.txt) ──► parser textu ──┐
-                                      ├─► CosmosRow ─► převod na Sale (rozdělení podle cen) ─► DB ─► párování
-prohlížeč (Playwright) ─► čtení DOM ──┘
+Playwright: zachycený JSON z API stránky ─► from_api() ───┐
+                                                          ├─► CosmosTransaction ─► to_sales() ─► DB ─► párování
+ruční kopie (.txt) ─► from_paste() (až bude vzorek) ──────┘
 ```
 
-## Co víme o Cosmosu (`docs/ZDROJE.md`, průzkum 2026-11-21)
+## Co víme o Cosmosu
 
-- Portál `publisher.leartesstudios.com/sales`, tabulka: `Transaction ID`, `Products`, `Amount`, `Payout`, `Date`.
-- Bez exportu. Stránka čte neveřejné JSON API s tokenem v prohlížeči (viz podklad k možnostem).
-- Transakce může mít **víc produktů**; částky jsou jen za celou transakci.
-- U produktu je název a **slug** → párování přes slug.
-- Částky `"<číslo> USD"`, výjimka **Virtual Credits** (částka bez měny, payout jen text).
-- `Date` = `YYYY-MM-DD HH:MM` v čase Europe/Prague.
+Podrobně v `docs/ZDROJE.md` a `docs/spec/M4-prohlizec-moznosti.md` (pokus 2026-11-21). Shrnutí:
+- Stránka `publisher.leartesstudios.com/sales` si data bere z `api.publisher.leartesstudios.com/sales?page=N&perPage=10`.
+- Transakce: `id`, `type` (`real` / `virtual`), `raw_amount` (např. `"19.9000"`), `payout` (`{amount, currency}`
+  nebo `null`), `created_at` (ISO 8601 UTC), `refund_details` (`null`, formát při refundu neznámý) a `items[]`
+  (`sku` = slug, `title`, `amount` = částka za produkt, `quantity`, `license`).
+- Součet `items[].amount` = `raw_amount` (ověřeno 10 z 10). `payout` je jen za celou transakci.
 
-## Společné jádro
+## Společné jádro (`cosmos.py`)
 
-**`CosmosRow`** (výstup obou cest): `transaction_id` (text bez `#`), `products` (seznam `(název, slug)`),
-`amount` (text), `payout` (text), `date` (text). Kontroly formátu jsou na jednom místě.
+**`CosmosTransaction`:** `id`, `created_at` (UTC), `virtual` (bool), `amount_cents`, `payout_cents` (nebo `None`),
+`refunded` (bool), `items` (`sku`, `title`, `amount_cents` nebo `None`, `quantity`, `license`), `source` (`browser` / `paste`).
 
 **Převod na záznamy v `sales`:** jeden záznam **na každý produkt v transakci**.
 
 | Společný model | Cosmos | Poznámka |
 |---|---|---|
-| `external_id` | `<transaction_id>\|<slug>` | např. `20001\|sample-medieval-village` |
-| `product_ref` | slug | párování přes `ref` v katalogu |
-| `product_title` | název produktu | |
-| `sold_at` | `Date` v Europe/Prague → UTC | |
-| `quantity` | 1 | |
-| `gross_cents` | `Amount` (rozdělené, viz níže) | |
-| `net_cents` | `Payout` (rozdělené stejně) | u Virtual Credits viz otázka 3 |
-| `currency` | `USD` | kredity se berou jako USD (rozhodnutí Vítka) |
-| `status` | `sold` | refundy viz otázka 4 |
-| `raw` | celý `CosmosRow` + zdroj (`paste` / `browser`) + index produktu | |
+| `external_id` | `<id>\|<sku>` | např. `20001\|sample-medieval-village` |
+| `product_ref` | `sku` (slug) | párování přes `ref` v katalogu |
+| `product_title` | `items[].title` | |
+| `sold_at` | `created_at` (UTC) | ruční kopie: `Date` v Europe/Prague → UTC |
+| `quantity` | `items[].quantity` | |
+| `gross_cents` | `items[].amount` | ruční kopie: dělení podle ceníku z katalogu |
+| `net_cents` | `payout` rozdělený v poměru `gross_cents` produktů | Virtual Credits: `net = gross` |
+| `currency` | `USD` | i Virtual Credits (rozhodnutí Vítka) |
+| `status` | `refunded`, když `refund_details` není `null`, jinak `sold` | formát refundu neověřen → upozornění |
+| `raw` | celá transakce z API + `source` + index produktu | bez osobních údajů (API je neposílá) |
 
-**Rozdělení transakce s víc produkty (rozhodnutí Vítka: podle cen):**
-- Katalog dostane u listingu na Cosmosu cenu: `- ref: sample-…` + `price: 19.90` (USD).
-- Podíl produktu = jeho cena / součet cen produktů v transakci. Centy se rozdělí metodou největšího zbytku,
-  takže **součet částí je vždy přesně celá částka** (žádný ztracený cent).
-- Když některý produkt transakce nemá v katalogu cenu → transakce se **přeskočí a vypíše** („doplň cenu“).
-  Nic se nerozdělí odhadem.
-- Transakce s jedním produktem cenu nepotřebuje.
+**Dělení payoutu (rozhodnutí Vítka 2026-11-21: podle skutečně zaplacených částek):**
+- Podíl produktu = `items[].amount` / `raw_amount`. Centy se rozdělí metodou největšího zbytku, takže
+  **součet částí je vždy přesně celý payout**.
+- Když jsou všechny částky produktů 0 (např. zdarma), payout se dělí rovným dílem.
 
-**Idempotence:** klíč `(cosmos, transaction_id|slug)`. Ruční kopie i agent můžou stejné prodeje načíst opakovaně.
+**Peníze:** `Decimal` z textu, na centy. Částka s nenulovou třetí nebo čtvrtou desetinou (`"19.9050"`) se
+**nezaokrouhluje**: transakce se přeskočí a vypíše (zatím jsme takovou neviděli).
 
-## Cesta 1: ruční kopie – `import cosmos [soubor]`
+**Validace transakce** (chyba → přeskočí se a vypíše ID + důvod): chybí `id` / `created_at` / `items`, neznámý
+`type`, `payout` u `real` chybí nebo není v USD, `sku` se v transakci opakuje, `quantity` < 1, součet
+`items[].amount` ≠ `raw_amount`.
 
-- Vítek na Sales nastaví největší velikost stránky, označí tabulku, zkopíruje a vloží do
-  `data/private/cosmos/<datum>.txt`. Víc stránek = víc vložení do stejného souboru (řádky hlavičky se přeskočí).
-- Bez cesty se naimportují všechny `*.txt` z `data/private/cosmos/` (jako u Fabu).
-- **Přesný tvar zkopírovaného textu zatím neznáme.** Před implementací parseru potřebuju jeden skutečný vzorek
-  (viz otázka 1). Parser se napíše podle něj, ne podle odhadu.
+**Idempotence:** klíč `(cosmos, id|sku)`. Agent i ruční kopie můžou stejné prodeje načíst opakovaně.
 
-## Cesta 2: agent v prohlížeči – `sync cosmos`
+## Cesta 1: agent v prohlížeči – `sync cosmos` (`cosmos_browser.py`)
 
-Způsob se rozhodne podle `docs/spec/M4-prohlizec-moznosti.md` (doporučení: Playwright s vlastním profilem, který
-zachytí JSON z API stránky; nejdřív krátký pokus). Pevně platí:
-- přihlašuje se vždy Vítek sám (reCAPTCHA), heslo ani token neprochází kódem, `.env` ani logem,
-- nejvýš 1 běh denně, pauzy mezi stránkami, jen čtení,
-- výstupem jsou stejné `CosmosRow` jako u ruční kopie, dál běží společné jádro,
-- když session vyprší nebo se změní web → hláška, nic se neuloží.
+- Playwright s **nainstalovaným Chrome** (`channel="chrome"`) a **vlastním trvalým profilem**
+  `data/private/browser/cosmos/` (mimo git). Headless.
+- `sync cosmos --login`: otevře okno, Vítek se přihlásí sám (reCAPTCHA), skript čeká, až stránka načte prodeje.
+  Heslo ani token neprochází naším kódem, `.env` ani logem.
+- `sync cosmos`: otevře `/sales?page=1`, zachytí odpověď API (`page.on("response")`) a pokračuje na
+  `/sales?page=N`, dokud:
+  - není poslední stránka (`meta.lastPage`), nebo
+  - **všechny transakce na stránce už jsou v DB** a od nejstarší z nich uplynulo víc než 30 dní
+    (stejné okno pro refundy jako u Gumroadu). První běh projde všechno.
+  - Mezi stránkami pauza 3 s. Nejvýš 50 stránek (pojistka).
+- Session vypršela (API nevrátí 200 nebo stránka skončí jinde než na `/sales`) → hláška
+  „přihlas se: sync cosmos --login“, **nic se neuloží**.
+- Odpověď nemá očekávaný tvar → hláška + screenshot do `data/private/cosmos/`, nic se neuloží.
+- Logika stránkování je oddělená od Playwrightu (`fetch_pages(load_page, …)`) a testuje se bez prohlížeče.
 
-## Chyby a výpis
+## Cesta 2: ruční kopie – `import cosmos [soubor]` (později)
 
-Stejně jako Fab: na konci `Cosmos (<zdroj>): transakcí N, záznamů M, nových, aktualizovaných, přeskočeno`, pak párování.
-Přeskočené transakce: ID + důvod (bez dalších údajů).
+- Návod pro vzorek níže. Parser se napíše podle skutečného vzorku, ne podle odhadu.
+- Text tabulky nemá částky za produkt → transakce s víc produkty se dělí podle `price` u listingu Cosmosu
+  v katalogu (Individual, bez slevy). Chybí cena → transakce se přeskočí. Katalog `price` zatím neumí.
 
-## Testy (bez sítě a bez prohlížeče, vymyšlená data)
+## Výpis
 
-- Převod `CosmosRow` → záznamy: jeden produkt, víc produktů (rozdělení podle cen, součet sedí na cent, i při
-  nedělitelných částkách), chybějící cena → přeskočení, Virtual Credits, čas v zóně, idempotence.
-- Parser ručně zkopírovaného textu na vymyšleném vzorku ve stejném tvaru jako skutečný (až bude).
-- Čtení DOM: na **uloženém vymyšleném HTML** (`data/sample/cosmos_sales.html`) přes Playwright offline
-  (`page.set_content`), bez sítě. Ostrý běh proti webu se testuje ručně.
-- Testy nesahají na `data/private/` ani na síť.
+`Cosmos (prohlížeč): transakcí N, záznamů M, nových, aktualizovaných, přeskočeno`, pak párování s katalogem.
 
-## Nové závislosti
+## Testy (bez sítě a bez prohlížeče, vymyšlená data `data/sample/cosmos_api_page*.json`)
 
-`playwright` (+ jednorázově `uv run playwright install chromium`, cca 150 MB). Jen pro cestu 2.
+- `from_api`: běžná transakce, víc produktů, Virtual Credits, refund, licence; všechny chyby z Validace.
+- `to_sales`: dělení payoutu na cent (i nedělitelné částky), částky v centech jako `int`, UTC, idempotence v DB.
+- `fetch_pages`: první běh projde všechny stránky; další běh skončí na stránce, kde je vše známé a starší než 30 dní;
+  pauzy; pojistka 50 stránek; neplatná odpověď.
+- CLI: výpis, session vypršela → nic se neuloží, párování po importu.
+- Ostrý běh proti webu se ověřuje ručně (spike i `sync cosmos`).
 
 ## Rozhodnutí Vítka (2026-11-21)
 
-1. **Vzorek ruční kopie** pořídí Vítek podle návodu (viz níže).
-2. **Ceny** přečteny z veřejných stránek produktů (licence Individual, ceník bez slevy). Uloží se do soukromého
-   katalogu jako `price` u listingu na Cosmosu. Katalog musí `price` nově podporovat (zatím jen `ref` / `title`).
-3. **Virtual Credits:** částka = `gross` i `net` (celé jako payout), měna USD.
-4. **Refundy:** Refund Requests prohlédnuto (zatím prázdné, sloupce v ZDROJE). Zahrnou se do agenta, až bude vidět,
-   jak se refund projeví.
-5. **Playwright:** zatím nerozhodnuto, Vítek chce víc podrobností → `docs/spec/M4-prohlizec-moznosti.md`.
+1. Vzorek ruční kopie pořídí Vítek podle návodu.
+2. Ceny produktů na Cosmosu (pro ruční kopii) přečteny z veřejných stránek; do katalogu jako `price` u cesty 2.
+3. **Virtual Credits:** částka = `gross` i `net`, měna USD.
+4. **Refundy:** zahrnout do agenta (`refund_details`), formát ověřit při prvním refundu.
+5. **Playwright** jako automat (pokus úspěšný), **payout dělit podle skutečných částek produktů** (ne ceníku).
 
 ## Návod: vzorek ruční kopie
 
