@@ -10,15 +10,17 @@
   testy prošly (111), ověřeno na skutečných datech: Vítkův `data/private/katalog.yaml` (5 produktů vč. bundle) je
   bez chyb, jediný skutečný prodej (Gumroad) spárován. Názvy listingů Fab/Cosmos/CGTrader jsou od Vítka a neověřené,
   ukáže je `catalog check` po importu v M3/M4.
+- 2026-11-21 – M3: import denního CSV reportu z Fabu (`import fab [soubor]`, bez cesty všechna CSV z
+  `data/private/fab/`). Napsáno, testy prošly (157), **ověřeno na skutečném reportu** (1. 10. – 20. 11. 2026):
+  součty `Net Sales` / `Net Units` sedí s CSV, druhý import 0 nových, všechny řádky spárovány s katalogem.
+  Do modelu přibylo `quantity`.
 
 ## Rozpracováno
 
-- M3 – Fab: návrh spec `docs/spec/M3-fab.md` (2026-11-20) podle skutečného reportu v `data/private/fab/`;
-  čeká na schválení a otázky 1–6.
+- (nic)
 
 ## Čeká na Vítka
 
-- Schválit `docs/spec/M3-fab.md` a odpovědět na otázky 1–6 (refundy, poplatek Fabu, quantity, zóna, měna, stahování).
 - (M4) Volitelně požádat o CGTrader API.
 
 ## Otevřené otázky
@@ -33,6 +35,8 @@
 
 ## Rozhodnutí
 
+- 2026-11-21 – Fab: refund = samostatný záporný záznam (`refunded`); `net = 88 % Net Sales`; `Day` v Europe/Prague;
+  měna USD; společný model má `quantity`.
 - 2026-11-20 – Katalog: produkt = 1 listing na marketplace (verze se neprodávají zvlášť); Fab bundle = samostatný produkt.
 - 2026-11-20 – Párování jen přesně (ID, pak normalizovaný název); podobnost jen jako návrh.
 - 2026-11-20 – Společný model má pole `status` (sold / refunded / partially_refunded / chargeback); refundy u všech marketplaces.

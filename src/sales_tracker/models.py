@@ -15,7 +15,11 @@ class Status(StrEnum):
 
 @dataclass(frozen=True)
 class Sale:
-    """One sale. Money in integer minor units (cents) of `currency`, time in UTC."""
+    """One sale record. Money in integer minor units (cents) of `currency`, time in UTC.
+
+    A record may cover several units (`quantity`, e.g. a Fab daily row) and may be negative
+    (a Fab refund row); amounts are totals for the record.
+    """
 
     marketplace: str
     external_id: str
@@ -27,3 +31,4 @@ class Sale:
     currency: str
     status: Status
     raw: dict[str, Any]
+    quantity: int = 1

@@ -149,6 +149,10 @@ def parse_sale(record: dict[str, Any]) -> Sale:
     # gumroad_fee already includes the processing fee for sales through Gumroad's merchant account
     net = gross - _cents(record, "gumroad_fee", external_id) if "gumroad_fee" in record else None
 
+    quantity = record.get("quantity", 1)
+    if type(quantity) is not int or quantity < 1:
+        raise SkipRecord(external_id, "pole 'quantity' není kladné celé číslo")
+
     return Sale(
         marketplace=MARKETPLACE,
         external_id=external_id,
@@ -161,6 +165,7 @@ def parse_sale(record: dict[str, Any]) -> Sale:
         currency="USD",
         status=_status(record),
         raw=record,
+        quantity=quantity,
     )
 
 

@@ -36,6 +36,10 @@ uv run pytest
 uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days
 uv run python -m sales_tracker sync gumroad --since 2026-01-01
 
+# Fab: save the daily sales report CSV into data/private/fab/, then
+uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
+uv run python -m sales_tracker import fab path/to/report.csv
+
 # product catalog (data/private/katalog.yaml, see data/sample/katalog.yaml)
 uv run python -m sales_tracker catalog check   # validate + list unmatched sales with ready-to-paste YAML
 uv run python -m sales_tracker catalog match   # re-assign every sale to a product

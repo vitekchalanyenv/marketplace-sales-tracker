@@ -1,4 +1,4 @@
-"""Command line: `uv run python -m sales_tracker sync gumroad [--since YYYY-MM-DD]`."""
+"""Command line: sync gumroad, import fab, catalog check/match (see README)."""
 
 import argparse
 import json
@@ -12,10 +12,11 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import db, gumroad
+from sales_tracker import db, fab, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
+FAB_DIR = Path("data/private/fab")
 REFUND_WINDOW_DAYS = 30
 
 
@@ -174,15 +175,67 @@ def _match_after_sync(catalog_path: Path, db_path: Path) -> None:
     catalog_match(catalog_path, db_path)
 
 
+def fab_report_paths(path: Path | None, folder: Path) -> list[Path]:
+    """The given file, or every *.csv in the folder (alphabetical: older periods first)."""
+    if path is not None:
+        return [path]
+    return sorted(folder.glob("*.csv")) if folder.is_dir() else []
+
+
+def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+    if not paths:
+        print(f"Žádný report z Fabu. Ulož CSV do {FAB_DIR}/ nebo zadej cestu k souboru.")
+        return 1
+
+    code = 0
+    imported = False
+    conn = db.connect(db_path)
+    try:
+        for path in paths:
+            try:
+                report = fab.parse_report(path)
+            except FileNotFoundError:
+                print(f"Soubor {path} neexistuje.")
+                code = 1
+                continue
+            except fab.FabFormatError as exc:
+                print(f"{path.name}: {exc}. Nic se z něj neuložilo.")
+                code = 1
+                continue
+
+            for skipped in report.skipped:
+                print(f"Přeskočeno: {path.name}, řádek {skipped.line} – {skipped.reason}")
+            for warning in report.warnings:
+                print(f"Upozornění: {path.name}, {warning}")
+            result = db.upsert_sales(conn, report.sales)
+            imported = True
+            print(
+                f"Fab ({path.name}): řádků {report.rows}, nových {result.new}, "
+                f"aktualizovaných {result.updated}, přeskočeno {len(report.skipped)}."
+            )
+    finally:
+        conn.close()
+
+    if imported:
+        _match_after_sync(catalog_path, db_path)
+    return code
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sales_tracker")
     commands = parser.add_subparsers(dest="command", required=True)
     sync = commands.add_parser("sync", help="stáhne prodeje z marketplace")
     sync.add_argument("marketplace", choices=["gumroad"])
     sync.add_argument("--since", type=_date, help="stáhnout prodeje od data (YYYY-MM-DD)")
+    imp = commands.add_parser("import", help="naimportuje ručně stažený report")
+    imp.add_argument("marketplace", choices=["fab"])
+    imp.add_argument("path", nargs="?", type=Path, help=f"CSV soubor; bez něj všechna CSV z {FAB_DIR}")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
     args = parser.parse_args(argv)
+
+    if args.command == "import":
+        return import_fab(fab_report_paths(args.path, FAB_DIR), DB_PATH)
 
     if args.command == "catalog":
         if args.action == "check":

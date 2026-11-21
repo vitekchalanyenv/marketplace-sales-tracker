@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS sales (
     status        TEXT    NOT NULL,
     raw           TEXT    NOT NULL,  -- original record as JSON
     product_key   TEXT,              -- catalog product (M2); NULL = unmatched
+    quantity      INTEGER NOT NULL DEFAULT 1,  -- units in this record (M3); negative = refund row
     first_seen_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     PRIMARY KEY (marketplace, external_id)
@@ -30,7 +31,10 @@ CREATE TABLE IF NOT EXISTS sales (
 
 # Fields compared to decide whether a stored sale changed. `raw` is left out on purpose:
 # marketplaces put volatile display text in it (Gumroad "timestamp": "about 2 months ago").
-COMPARED = ("product_title", "product_ref", "sold_at", "gross_cents", "net_cents", "currency", "status")
+COMPARED = (
+    "product_title", "product_ref", "sold_at", "quantity",
+    "gross_cents", "net_cents", "currency", "status",
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "product_key" not in columns:  # added in M2
         with conn:
             conn.execute("ALTER TABLE sales ADD COLUMN product_key TEXT")
+    if "quantity" not in columns:  # added in M3
+        with conn:
+            conn.execute("ALTER TABLE sales ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
 
 
 def _row(sale: Sale) -> dict:
@@ -67,6 +74,7 @@ def _row(sale: Sale) -> dict:
         "net_cents": sale.net_cents,
         "currency": sale.currency,
         "status": str(sale.status),
+        "quantity": sale.quantity,
         "raw": json.dumps(sale.raw, ensure_ascii=False, sort_keys=True),
     }
 

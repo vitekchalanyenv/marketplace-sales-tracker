@@ -5,7 +5,7 @@
 | **M0: Kostra** | repo, pravidla, plán, spec M1 | ✅ |
 | **M1: Gumroad** ✅ | stažení prodejů přes API do SQLite | `uv run python -m sales_tracker sync gumroad` stáhne skutečné prodeje, druhé spuštění nepřidá duplicity, testy na ukázkových datech projdou |
 | **M2: Katalog produktů** ✅ | `data/private/katalog.yaml` (Vítkovy produkty + jejich ID/názvy na každém marketplace), párování prodejů na produkt | každý prodej v DB má přiřazený produkt, nespárované se hlásí |
-| **M3: Fab** | import měsíčních CSV reportů s validací | report se načte, vadné řádky se nahlásí, opakovaný import nevytvoří duplicity |
+| **M3: Fab** ✅ | import měsíčních CSV reportů s validací | report se načte, vadné řádky se nahlásí, opakovaný import nevytvoří duplicity |
 | **M4: Cosmos + CGTrader** | Cosmos z webu (po dohodě s Vítkem), CGTrader podle přístupu k API | prodeje z obou jsou v DB |
 | **M5: Upozornění + týdenní agent** | denní běh (plánovač Windows), notifikace o novém prodeji, týdenní shrnutí od Claude | Vítek dostane shrnutí, ve kterém agent nic nevymýšlí (čísla sedí s DB) |
 | **M6: Přehled** | jednoduchý dashboard (nejspíš Streamlit) | celkem / podle marketplace / podle produktu / v čase |
@@ -22,6 +22,7 @@
 | `sold_at` | čas prodeje v UTC |
 | `gross_cents` | cena, kterou zaplatil zákazník |
 | `net_cents` | co dostane Vítek (po poplatcích), pokud je známo |
+| `quantity` | počet kusů (Fab: `Net Units`, refund záporný; Gumroad: `quantity`, jinak 1) |
 | `currency` | ISO kód měny (USD, EUR…), velkými písmeny. Částky se ukládají **v původní měně marketplace**, bez převodu |
 | `status` | `sold` / `refunded` / `partially_refunded` / `chargeback`. Refund se neukládá jako nový prodej, jen změní `status` existujícího. Každý marketplace ho čte po svém |
 | `raw` | původní záznam (JSON), kvůli dohledání |

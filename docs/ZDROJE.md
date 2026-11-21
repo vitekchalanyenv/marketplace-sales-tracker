@@ -84,7 +84,7 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
 - **Ověřeno na skutečném souboru 2026-11-20** (leží v `data/private/fab/`, tady jen formát):
   - název `<od>_<do>_fab_daily_sales_report.csv`, UTF-8 bez BOM, čárka, CRLF, hlavička na 1. řádku,
   - přesně 9 sloupců: `Day, Source, Listing Title, License, Base Price, Total VAT, Total Tax, Net Units, Net Sales`,
-  - `Day` = `YYYY-MM-DD` bez času a zóny (zóna neznámá),
+  - `Day` = `YYYY-MM-DD` bez času a zóny (rozhodnutí Vítka: místní čas Europe/Prague),
   - částky s tečkou, bez pevného počtu desetin (`7.5`, `12.0`), max. 2 desetinná místa, bez měny,
   - `Net Sales = Base Price × Net Units`; `Net Units` může být > 1,
   - **refund = samostatný záporný řádek** v den refundu (`Net Units -1`, `Net Sales` záporné),
@@ -94,7 +94,8 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
   - **poplatek Fabu v reportu není** (`Net Sales` je před poplatkem).
 - Report je **agregovaný po dnech** (`Day`, `Net Units`), ne po transakcích. Klíč řádku: den + source + listing +
   licence + cena (návrh M3).
-- **Neověřeno:** měna (předpoklad USD), časová zóna `Day`, výše poplatku Fabu, jestli Fab zpětně mění už vydané dny.
+- Měna USD a podíl tvůrce 88 % potvrdil Vítek (2026-11-21); v reportu samotném nejsou.
+- **Neověřeno:** jestli Fab zpětně mění už vydané dny (import by to zachytil jako `aktualizovaných`).
 
 ## Cosmos (Leartes) – jen webová tabulka 🟠
 

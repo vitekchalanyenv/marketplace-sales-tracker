@@ -1,6 +1,8 @@
 # Specifikace M3: Import denního reportu z Fabu
 
-**Stav:** návrh 2026-11-20, čeká na schválení Vítkem a odpovědi na otázky na konci.
+**Stav:** schváleno Vítkem 2026-11-21, otázky 1–6 rozhodnuty (viz konec).
+**Implementace:** napsáno, testy prošly (157 celkem), **ověřeno na skutečném reportu** 2026-11-21: součet `Net Sales`
+a `Net Units` v DB sedí s CSV, opakovaný import 0 nových, všechny řádky spárované s katalogem.
 
 ## Cíl
 
@@ -38,12 +40,12 @@ Podrobně v `docs/ZDROJE.md`.
 | `external_id` | `Day` + `Source` + `Listing Title` + `License` + `Base Price` v centech | např. `2026-01-17\|Fab\|Sample Hangar\|Personal\|1200` |
 | `product_title` | `Listing Title` | párování s katalogem podle názvu |
 | `product_ref` | – | Fab žádné ID nemá |
-| `sold_at` | `Day` 00:00 UTC | viz otázka 4 |
-| 🆕 `quantity` | `Net Units` | nové pole, viz otázka 3; může být záporné |
+| `sold_at` | `Day` 00:00 Europe/Prague → UTC | rozhodnutí 4 |
+| `quantity` | `Net Units` | nové pole; může být záporné |
 | `gross_cents` | `Net Sales` v centech | může být **záporné** (refund) |
-| `net_cents` | viz otázka 2 | |
-| `currency` | `USD` | viz otázka 5 |
-| `status` | `sold`, záporný řádek → `refunded` | viz otázka 1 |
+| `net_cents` | `round(Net Sales × 0,88)` | rozhodnutí 2 |
+| `currency` | `USD` | |
+| `status` | `Net Units < 0` → `refunded`, jinak `sold` | |
 | `raw` | celý řádek (slovník sloupec → text) + název souboru | |
 
 **Proč je v klíči i cena:** stejný den, listing a licence se může prodávat za dvě ceny (začátek nebo konec slevy).
@@ -72,28 +74,29 @@ s katalogem (`spárováno / nespárováno`, jako po `sync`).
 
 ## Testy (bez sítě, vymyšlená data `data/sample/fab_report.csv`)
 
-- Převod řádku: centy (`7.5` → 750, `12.0` → 1200), `quantity`, záporný řádek = refund, UTC datum, měna.
+- Převod řádku: centy (`7.5` → 750, `12.0` → 1200), `quantity`, záporný řádek = refund, den v Europe/Prague → UTC
+  (zima i léto), měna, `net = 88 %` se zaokrouhlením.
+- `import fab` bez cesty načte všechny CSV ze složky.
 - Klíč: stejný den, listing a licence, jiná cena → dva záznamy.
 - Opakovaný import stejného souboru → 0 nových. Překrývající se report → jen nové dny přibudou. Změna `Net Units` → aktualizace.
 - Validace: všechny situace z tabulky. Špatná hlavička → nic se neuloží.
 - Soubor s BOM a s LF i CRLF se načte stejně (Excel při uložení BOM přidává).
 - Párování na vzorový katalog.
 
-## K rozhodnutí (Vítek)
+## Rozhodnutí Vítka (2026-11-21)
 
-1. **Refundy na Fabu** jsou samostatné záporné řádky a nedají se přiřadit k původnímu prodeji. Návrh: uložit je jako
-   samostatný záznam se záporným `gross_cents` a `status = refunded`. Součty pak vychází správně samy.
-   U Gumroadu refund mění stav původního prodeje, u Fabu je to vlastní řádek („každý marketplace to čte po svém“).
-2. **Čistý příjem:** report poplatek Fabu neobsahuje. Z mé paměti má Fab podíl tvůrce 88 % (poplatek 12 %), ale **ze zdroje ani z tvých dat
-   to ověřené není**. Návrh A: `net_cents` nechat prázdné, dokud nebude zdroj (např. výplatní report).
-   Návrh B: počítat 88 % s poznámkou „odhad“. Co chceš? Máš ve Fabu i výplatní / payout report?
-3. **Počet kusů:** přidat do společného modelu `quantity`? Fab má v řádku i 2 kusy, u Gumroadu je `quantity` také
-   (u stávajících prodejů by se doplnilo 1). Návrh: ano.
-4. **Časová zóna `Day`:** report ji neuvádí. Návrh: brát jako UTC (Epic/Fab reporty obvykle bývají v UTC – **neověřeno**).
-   Pro denní přehledy je rozdíl max. jeden den.
-5. **Měna:** v reportu není. Návrh: USD (ceny na Fabu jsou v dolarech). Potvrdíš, že ve Fabu vidíš ceny a výplaty v USD?
-6. **Jak budeš reporty stahovat?** Návrh: kdykoli stáhneš libovolné období, uložíš do `data/private/fab/` a spustíš
-   import; překryvy nevadí. Případně `import fab` bez cesty naimportuje všechny soubory z `data/private/fab/`.
+1. **Refund** = samostatný záznam se záporným `gross_cents` / `net_cents` / `quantity` a `status = refunded`.
+2. **Čistý příjem** = 88 % z `Net Sales` (Vítek potvrdil podíl tvůrce 88 %). `net_cents = round(Net Sales × 0,88)`
+   v centech, zaokrouhlení half-up přes `Decimal`. Sazba je konstanta v kódu (`FAB_CREATOR_SHARE`).
+3. **`quantity`** přibývá do společného modelu. Řádek s `Net Units = 2` je totéž, jako by tam byl dvakrát po jednom
+   kusu; součty se počítají z `gross_cents` / `net_cents` řádku. Gumroad: `quantity` z odpovědi (chybí → 1),
+   u existujících prodejů se doplní 1.
+4. **`Day` je v místním čase Vítka (Europe/Prague).** `sold_at` = `Day` 00:00 Europe/Prague převedené na UTC
+   (např. `2026-01-03` → `2026-01-02T23:00:00Z`). Při zobrazení se převede zpět na místní den.
+   Windows nemá databázi časových zón → nová závislost `tzdata`.
+5. **Měna** USD.
+6. **Stahování:** Vítek ukládá reporty za libovolné období do `data/private/fab/`. `import fab` bez cesty
+   naimportuje všechny `*.csv` z této složky (v abecedním pořadí), `import fab <soubor>` jen jeden.
 
 ## Mimo rozsah M3
 
