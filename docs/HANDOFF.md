@@ -1,38 +1,41 @@
 # Předání
 
-**Relace:** 2026-11-20 (M1 Gumroad)
+**Relace:** 2026-11-20 až 2026-11-21 (M1 dokončeno, M2, M3)
 
 ## Kde jsme
 
-- **M1 – Gumroad: napsáno, testy prošly (64), ruff čistý, ověřeno na skutečném účtu jen částečně.**
-  - `uv run python -m sales_tracker sync gumroad [--since YYYY-MM-DD]` → `data/private/sales.db` (SQLite).
-  - Ostrý běh proti API: staženo 0, protože na Gumroadu zatím **není žádný prodej**. Neplatný token → správná hláška.
-  - Struktura prodeje vzata z dokumentace a **zdrojového kódu Gumroadu** (`github.com/antiwork/gumroad`), popsaná
-    v `docs/ZDROJE.md`. Převod, refundy, stránkování a idempotence ověřeny jen na vymyšlených datech v `data/sample/`.
-- Kód: `src/sales_tracker/` – `models.py` (společný model + `status`), `db.py` (upsert, klíč marketplace + external_id),
-  `gumroad.py` (klient + převod), `cli.py`.
-- Rozhodnutí této relace jsou v `docs/PROGRESS.md` (sekce Rozhodnutí): `status` v modelu, okno 30 dní,
-  `net = price − gumroad_fee`, částky v původní měně, Cosmos čas = Europe/Prague.
-- `docs/AI_CHYBY.md`: 2 záznamy (od oka vymyšlené poplatky ve vzorku; `httpx` bez úložiště certifikátů Windows).
+- **M1 Gumroad ✅** – ověřeno na skutečném (zkušebním) prodeji Vítka: struktura odpovědi i vzorec poplatků sedí.
+  Neověřeno na skutečných datech: refund, stránkování (>100 prodejů).
+- **M2 Katalog ✅** – `data/private/katalog.yaml` (5 produktů vč. Fab bundle), `catalog check` / `catalog match`,
+  párování po každém `sync` / `import`. Jen přesné párování (ID, pak normalizovaný název), podobnost = návrh.
+- **M3 Fab ✅** – `import fab [soubor]` (bez cesty všechna CSV z `data/private/fab/`), ověřeno na skutečném reportu
+  1. 10. – 20. 11. 2026: součty sedí s CSV, opakovaný import 0 nových, vše spárováno.
+- DB `data/private/sales.db`: všechny záznamy spárované. Model má `status` a `quantity`.
+- Testy: **157 passed**, `ruff check` čistý (2026-11-21).
+- Kód: `src/sales_tracker/` – `models.py`, `db.py` (migrace sloupců), `gumroad.py`, `fab.py`, `catalog.py`, `cli.py`.
 
 ## Co udělat dál
 
-1. Uzavřít M1, až bude na Gumroadu první prodej (nebo testovací nákup přes 100% slevový kód – dělá Vítek):
-   spustit sync, porovnat skutečnou odpověď se `ZDROJE.md`, uložit vzorek do `data/private/`, případně opravit převod.
-2. Mezitím lze začít **M2 (katalog produktů)**: nejdřív spec v `docs/spec/`, Vítek schválí.
-   Nebo M3 (Fab CSV), až Vítek pošle sloupce reportu.
+1. **M4 – Cosmos + CGTrader.** Než se cokoli automatizuje v prohlížeči, zeptat se Vítka (pravidlo 7).
+   - Cosmos: jen webová tabulka (Reports → Sales, 10 / stránka), bez exportu. Možnosti: ruční kopie tabulky do souboru,
+     nebo zjistit, jestli web volá vlastní JSON API (jen s Vítkovým souhlasem, šetrně).
+   - CGTrader: zjistit, jestli Vítek má / chce API přístup; jinak export / ruční kopie z My Sales.
+2. Vyřešit zkušební prodej z Gumroadu v DB (refund na Gumroadu → ověří i refund, nebo označit jako test).
 
 ## Otevřené otázky pro Vítka
 
-- Měny pro týdenní shrnutí: převádět do USD, nebo CZK? Kurzy odkud (ČNB)? Stačí rozhodnout před M5.
-- (M3) Všechny sloupce Fab CSV reportu; (M4) volitelně žádost o CGTrader API.
+- M4: jak číst Cosmos a CGTrader (viz výše).
+- Měny pro týdenní shrnutí (USD, nebo CZK?) a zdroj kurzů – před M5.
 
 ## Pozor
 
-- Každý nový HTTP klient musí používat úložiště certifikátů Windows (`ssl.create_default_context()`), jinak
-  `CERTIFICATE_VERIFY_FAILED`. Git už je na `schannel`.
-- `python-dotenv`: `.env` načítat explicitní cestou z cwd (`load_dotenv(Path.cwd() / ".env")`), jinak se hledá od
-  souboru modulu nahoru a testy by mohly sáhnout na skutečný `.env`.
+- HTTPS jen přes úložiště certifikátů Windows: Python `ssl.create_default_context()`, git `schannel`,
+  `uv add --system-certs`.
+- Do veřejného repa (spec, ZDROJE) **jen formát a vymyšlené příklady**, nikdy skutečné řádky reportů.
+- Testy nikdy nesahají na `data/private/` (cesty předávat do `tmp_path`).
+- `.env` načítat explicitní cestou z cwd.
+- V heredocu s Pythonem pozor na `\n` / `\b` v řetězcích (dvakrát rozbilo soubor) – na víceřádkové úpravy kódu
+  raději nástroj Edit.
 
 ## Jak pracovat
 

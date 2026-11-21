@@ -32,6 +32,7 @@
 
 - V DB je zkušební prodej Gumroad (malá částka, 2026-11-20). Zkreslí součty, dokud se nevyřeší (refund / označení jako test).
 - HTTPS na Vítkově počítači jde přes certifikát, kterému věří jen úložiště Windows (antivirus/proxy). Řešeno: git → `http.sslBackend schannel`, Python → `ssl.create_default_context()`. Každý nový HTTP klient musí jet stejně.
+  `uv add` potřebuje `--system-certs`.
 
 ## Rozhodnutí
 
