@@ -18,14 +18,16 @@
 ## Rozpracováno
 
 - M4a – Cosmos: spec `docs/spec/M4-cosmos.md`, otázky 1–4 rozhodnuty. Ruční kopie čeká na vzorek od Vítka;
-  automat čeká na volbu podle `docs/spec/M4-prohlizec-moznosti.md` (doporučen pokus s Playwrightem).
+  Pokus s Playwrightem (2026-11-21) **úspěšný**: vlastní profil drží login, headless projde Cloudflare, JSON z API
+  stránky se zachytí. Výsledky a struktura v `docs/spec/M4-prohlizec-moznosti.md`. Čeká na Vítkovo rozhodnutí
+  o cestě 2 a dělení payoutu.
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
 
 ## Čeká na Vítka
 
 - M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
-- M4a: rozhodnout způsob automatu (`docs/spec/M4-prohlizec-moznosti.md`).
+- M4a: potvrdit Playwright jako cestu 2 a dělení payoutu podle `items[].amount` (místo ceníku).
 - M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
 
 ## Otevřené otázky

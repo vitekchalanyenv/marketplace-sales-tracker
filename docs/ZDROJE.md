@@ -124,7 +124,8 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
     a slevové akce, takže zaplacená částka se od ceníkové liší.
   - **Refund Requests** (`/refund-requests`): sloupce `ID, Customer, Products, Reason, Status, Date, Actions`.
     Zatím žádný požadavek, takže jak se refund projeví v Sales, nevíme.
-- Možnosti automatizace: `docs/spec/M4-prohlizec-moznosti.md`.
+- Možnosti automatizace a **ověřená struktura API** (pokus 2026-11-21): `docs/spec/M4-prohlizec-moznosti.md`.
+  API vrací částku za každý produkt (`items[].amount`), slug (`sku`), licenci a `created_at` v UTC.
 
 ## CGTrader – web (My Sales) + API na žádost 🟡
 

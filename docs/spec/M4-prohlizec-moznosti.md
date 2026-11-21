@@ -1,6 +1,6 @@
 # M4a: Možnosti automatického stahování z Cosmosu (podklad k rozhodnutí)
 
-**Stav:** podklad pro Vítka, 2026-11-21. Nic z toho zatím není rozhodnuté ani nainstalované.
+**Stav:** 2026-11-21 Vítek zvolil pokus s A. Pokus proběhl úspěšně, výsledky jsou na konci.
 
 ## Co o Cosmosu víme (průzkum 2026-11-21, jen čtení)
 
@@ -9,8 +9,8 @@
 - Data bere z **neveřejného JSON API** `GET https://api.publisher.leartesstudios.com/sales?page=1&perPage=10`.
   (V prvním průzkumu jsem ho přehlédl, viz `AI_CHYBY.md`.)
 - API **nepoužívá cookies**, ale **token v `localStorage`** prohlížeče. Bez tokenu vrací `401`.
-  Strukturu odpovědi s daty jsem neověřoval: request s tokenem zablokovala bezpečnostní kontrola mého prostředí
-  a obcházet to nebudu.
+  Strukturu odpovědi jsem nejdřív neověřil (ruční request s tokenem zablokovala bezpečnostní kontrola mého
+  prostředí). Ověřil ji až pokus A, kde odpověď zachytí prohlížeč (viz níže).
 - Přihlášení má **reCAPTCHA** (v prohlížeči je `_grecaptcha`), takže **automatické přihlašování nepřipadá v úvahu**.
   Přihlašuje se vždy Vítek ručně.
 - Před webem je Cloudflare (`/cdn-cgi/rum`). Prohlížeč bez okna (headless) nebo čistě HTTP klient může narazit
@@ -71,3 +71,47 @@ Hodinová ověřovačka, ne finální kód:
 3. Podle výsledku: A jako hlavní cesta, nebo přejít na C.
 
 Ruční kopie (D) se implementuje každopádně a sdílí s A/C převod a ukládání.
+
+## Výsledek pokusu A (2026-11-21)
+
+Skript `spikes/cosmos_playwright.py` (není produkční kód). Playwright 1.65 spouští **nainstalovaný Chrome**
+(`channel="chrome"`), takže se žádné Chromium nestahuje. Samotný balíček `playwright` má ale ~113 MB (obsahuje Node.js).
+
+| Otázka | Výsledek |
+|---|---|
+| Přihlášení ve vlastním profilu | ✅ Vítek se přihlásil v okně (reCAPTCHA ručně), skript nic nečetl |
+| Vydrží login po zavření prohlížeče? | ✅ další běhy už přihlášené (jak dlouho vydrží dny/týdny, zatím nevíme) |
+| Zachycení JSON z API stránky | ✅ odpověď `/sales?page=1&perPage=10` zachycena |
+| Headless přes Cloudflare | ✅ funguje (1,5 s), stejná data jako s oknem |
+| Token v našem kódu | ✅ nikde – přihlášení drží profil prohlížeče |
+
+**Struktura odpovědi** (jen klíče; skutečný vzorek v `data/private/cosmos/`):
+
+```
+{ "data": [ { "id": int, "amount": str, "raw_amount": str, "type": "real" | "virtual",
+              "created_at": str, "updated_at": str,
+              "payout": { "amount": str, "currency": "USD" } | null,
+              "refund_details": null | ?,
+              "items": [ { "sku": str, "title": str, "type": str, "amount": str, "service": str,
+                           "quantity": int, "license": "individual" | "studio" | "enterprise",
+                           "promotions": [], "is_pre_order": bool } ] } ],
+  "meta": { "total", "perPage", "currentPage", "lastPage", "firstPage",
+            "firstPageUrl", "lastPageUrl", "nextPageUrl": "/?page=2", "previousPageUrl" } }
+```
+
+Zjištění, která mění návrh:
+- **`items[].amount` = částka za každý produkt** a jejich součet přesně odpovídá `raw_amount` transakce (10 / 10).
+  Hrubá tržba produktu se tedy nemusí odhadovat z ceníku. Rozdělit se musí jen `payout`, který je za celou
+  transakci, a to nejlépe v poměru `items[].amount` (skutečně zaplacené ceny místo ceníku).
+- `items[].sku` = slug (stejný jako v katalogu), `license` a `quantity` jsou k dispozici.
+- `created_at` je ISO 8601 v **UTC** (`…THH:MM:SS.sssZ`). Tabulka na webu ukazuje stejný okamžik v Europe/Prague
+  (o 1–2 h víc), což potvrzuje rozhodnutí o časové zóně u ruční kopie.
+- Částky mají 4 desetinná místa (`"19.9000"`). U `type: "virtual"` je `amount` text s „Virtual Credits“,
+  `raw_amount` číslo a `payout` = `null`.
+- `refund_details` existuje (zatím vždy `null`) → refund půjde poznat, až nějaký bude.
+- Stránkování: `meta.nextPageUrl`; další stránka = otevřít `/sales?page=N` a zachytit odpověď.
+
+**Otevřené:** jak dlouho vydrží přihlášení; co přesně obsahuje `refund_details` při refundu.
+
+**Doporučení:** cesta 2 = varianta A (Playwright, vlastní profil, headless, zachycení JSON). Ruční kopie zůstává jako
+záložní cesta: tam se transakce s víc produkty dělí podle ceníku z katalogu, protože text tabulky částky za produkt nemá.
