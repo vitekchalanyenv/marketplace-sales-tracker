@@ -99,15 +99,38 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
 
 ## Cosmos (Leartes) – jen webová tabulka 🟠
 
-- Sekce Reports → Sales. Žádný export.
-- Sloupce: `Transaction ID` (např. `#30001`), `Products` (název + slug, např. `sample-medieval-village`),
-  `Amount` (USD), `Payout` (USD), `Date` (`YYYY-MM-DD HH:MM`, místní čas Vítka – Europe/Prague, tj. CET/CEST; rozhodnuto 2026-11-20).
-- Stránkování 10 / stránka.
-- **K rozhodnutí v M4:** automatizace prohlížeče, nebo jestli web volá vlastní JSON API, které jde použít
-  s Vítkovým přihlášením. Nejdřív se zeptat Vítka.
+- Publisher portál `https://publisher.leartesstudios.com/`, sekce Reports → Sales (`/sales`, stránky `?page=N`).
+- **Prozkoumáno 2026-11-21 v prohlížeči (jen čtení, Vítkův účet):**
+  - Tabulka „Latest Sales“: `Transaction ID` (`#` + číslo), `Products`, `Amount`, `Payout`, `Date`.
+  - **Jedna transakce může obsahovat víc produktů** (víc štítků v buňce Products). `Amount` a `Payout` jsou ale jen
+    za celou transakci → rozpočítání na produkty z tabulky nejde.
+  - U produktu je název **a slug** (např. `sample-medieval-village`). Názvy na Cosmosu se můžou lišit od Fabu
+    (u jednoho produktu je navíc „Environment“) → v katalogu párovat podle **slugu** (`ref`).
+  - `Amount` / `Payout` jako `"<číslo> USD"`. Výjimka: prodej za **Virtual Credits** – `Amount` bez měny, `Payout`
+    = text `Virtual Credits` (bez částky v USD).
+  - Podíl prodejce kolísá (Payout / Amount není konstantní) → `net` brát z `Payout`.
+  - `Date` = `YYYY-MM-DD HH:MM`, místní čas Vítka (Europe/Prague, rozhodnuto 2026-11-20).
+  - Stránkování 10 / stránka (výběr velikosti stránky existuje, možnosti neprohlédnuty), celkový počet dole.
+  - Filtr podle data a vyhledávání. **Žádný export.**
+  - **Žádné JSON API:** přechod na další stránku nevyvolal žádný XHR/fetch, data posílá server rovnou v HTML.
+  - Dashboard má i „Refund Requests“ (zatím neprohlédnuto).
+- **K rozhodnutí v M4:** ruční kopie tabulky, nebo automatizace prohlížeče (jen s Vítkovým souhlasem, šetrně).
 
-## CGTrader – API na žádost 🟡
+## CGTrader – web (My Sales) + API na žádost 🟡
 
-- API přes OAuth 2.0, přístupový klíč se žádá formulářem na cgtrader.com/developers.
-- Prodeje jsou v účtu v sekci My Sales (jednotlivé prodeje, měsíční statistiky, daně).
-- **K ověření v M4:** jestli API vrací prodeje prodejce. Pokud ne, ruční export / web.
+- API přes OAuth 2.0, přístupový klíč se žádá formulářem na cgtrader.com/developers. **Vítek požádal 2026-11-21**,
+  čeká se. Jestli API vrací prodeje prodejce, zatím nevíme.
+- **Prozkoumáno 2026-11-21 v prohlížeči (jen čtení, Vítkův účet):**
+  - `cgtrader.com/profile/sales` → Overview: měsíční souhrn (Sales $, Avg. Earning Rate, Earnings, Subscription
+    earnings, Donations, Final Earnings) a „View details“ u každého měsíce.
+  - Detail měsíce = **jednotlivé prodeje**: `OID`, `Date` (`YYYY-MM-DD`), `Product`, `Buyer` (uživatelské jméno),
+    `Price for payout calculation` ($), `Final earnings` ($), `Status` (např. Paid). Volitelné sloupce přes „Columns“:
+    `Country`, `Original price`, `Sold for`, `Payment processing`, `After tax`, `Earning rate` (a další, neprohlédnuto).
+    Stránkování 10 / 40 na stránku.
+  - Tlačítko **„Generate report“** v detailu měsíce: **report přijde e-mailem** („Report will be sent to your email
+    shortly!“, vyzkoušeno 2026-11-21 pro jeden měsíc). Formát přílohy zatím neznáme.
+  - Stránka bere data z **interního JSON API** (bez dokumentace, může se změnit):
+    `GET /api/internal/profile/sales?resource=sales&page=1&per_page=40&month=YYYY-MM` a
+    `GET /api/internal/profile/sales?resource=available_months`. Přihlášení cookie z prohlížeče.
+  - **Podíl prodejce je proměnlivý** (payout rate podle objemu prodejů za období, mění se), takže `net` se nedá počítat
+    pevnou sazbou jako u Fabu – bere se `Final earnings`.
