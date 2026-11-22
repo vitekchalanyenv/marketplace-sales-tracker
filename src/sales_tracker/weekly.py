@@ -25,10 +25,13 @@ NAMES = {"gumroad": "Gumroad", "cosmos": "Cosmos", "fab": "Fab", "cgtrader": "CG
 SLOT_RE = re.compile(r"\{([a-z0-9_]+)\}")
 DIGIT_RE = re.compile(r"\d")
 NUMBER_WORD_RE = re.compile(
-    r"\b(nula|nul[ay]|jed(en|na|no|nou|noho|nomu)|dv(a|ě|ou|ěma)|tř(i|ech|em)|čtyř(i|ech)?|pět|šest|"
-    r"sedm|osm|devět|deset|žádn\w*|polovin\w*|dvojnásob\w*|trojnásob\w*|dvakrát|třikrát)\b",
+    r"\b(nula|nul[ay]|jed(en|na|no|nou|noho|nomu)|jedin\w*|dv(a|ě|ou|ěma)|oba|obě|obou|oběma|"
+    r"tř(i|ech|em)|čtyř(i|ech)?|pět|šest|sedm|osm|devět|deset|žádn\w*|několik\w*|většin\w*|menšin\w*|"
+    r"pár|polovin\w*|dvojnásob\w*|trojnásob\w*|dvakrát|třikrát)\b",
     re.IGNORECASE,
 )
+RANKING_RE = re.compile(r"\bnej\w+", re.IGNORECASE)  # nejlépe, nejsilnější… – the order comes from code
+CAUSE_RE = re.compile(r"\b(kvůli|díky|protože|proto|způsobi\w*|zásluh\w*)\b", re.IGNORECASE)
 DIRECTION_RE = re.compile(
     r"\b(\w*(vzr[ůo]st|kles|pokles|nárůst|narost|propad|zlepš|zhorš|zdvoj|ztroj|přibyl|ubyl)\w*|"
     r"vyšší|nižší|víc|více|méně|míň|lepší|horší|stejn\w*)\b",
@@ -46,7 +49,11 @@ Text se po tobě strojově kontroluje a zamítne se, když:
 - obsahuje číslici nebo číslovku slovy (jeden, dva, žádný, polovina…),
 - sám říká směr změny (vzrostl, klesl, víc, méně, lepší, horší…). Na směr použij značky {smer_prijmu}
   a {smer_kusu}, např. „Příjem {smer_prijmu} o {zmena_kc}.“,
-- značka u marketplace nebo produktu nestojí ve stejné větě nejblíž jeho názvu. Názvy produktů piš jen
+- obsahuje množství slovy (jediný, oba, několik, většina, pár…),
+- obsahuje pořadí nebo superlativ (nejlépe, nejsilnější…). Na pořadí jsou značky {nejlepsi_marketplace}
+  a {nejprodavanejsi_produkt},
+- uvádí příčinu (kvůli, díky, protože…). Příčiny v datech nejsou,
+- značka u marketplace nebo produktu nestojí ve stejné větě hned za jeho názvem. Názvy produktů piš jen
   značkou ({produkt1} …), marketplace jménem.
 Použij jen značky ze seznamu. Odpověz jen samotným komentářem, bez nadpisu a bez odrážek."""
 
@@ -141,10 +148,11 @@ def week_facts(
         "cisty_prijem_kc": kc(whole.czk),
         "podle_marketplace": [
             {"marketplace": NAMES.get(m, m), "kusu": t.units, "cisty_prijem_kc": kc(t.czk)}
-            for m, t in sorted(by_mp.items(), key=lambda kv: (-kv[1].units, kv[0]))
+            # highest income first (Kč), then units – the same order as the month in the report
+            for m, t in sorted(by_mp.items(), key=lambda kv: (-(kv[1].czk or 0), -kv[1].units, kv[0]))
         ],
         "podle_produktu": [
-            {"produkt": product_name(p), "kusu": t.units, "cisty_prijem_kc": kc(t.czk)}
+            {"produkt": product_name(p) or p, "kusu": t.units, "cisty_prijem_kc": kc(t.czk)}
             for p, t in sorted(by_product.items(), key=lambda kv: (-kv[1].units, kv[0]))
         ],
         "predchozi_tyden": {
@@ -195,6 +203,7 @@ class Slot:
     value: str
     meaning: str
     entity: str | None = None  # marketplace name or productN the value belongs to
+    names: str | None = None  # the slot itself names this marketplace / productN (counts as a mention)
 
 
 def _pieces(n: int) -> str:
@@ -242,10 +251,14 @@ def slots(facts: dict[str, Any]) -> dict[str, Slot]:
         s[f"{key}_kusu"] = Slot(_pieces(item["kusu"]), f"prodáno kusů na {name}", name)
         if item["cisty_prijem_kc"]:
             s[f"{key}_kc"] = Slot(item["cisty_prijem_kc"], f"čistý příjem z {name} v Kč", name)
+    if facts["podle_marketplace"]:  # sorted by income, then units (week_facts)
+        best = facts["podle_marketplace"][0]["marketplace"]
+        s["nejlepsi_marketplace"] = Slot(best, "marketplace s nejvyšším příjmem (název)", names=best)
     for index, item in enumerate(facts["podle_produktu"], start=1):
         key = f"produkt{index}"
-        rank = " (nejprodávanější)" if index == 1 else ""
-        s[key] = Slot(item["produkt"], f"název produktu{rank}")
+        s[key] = Slot(item["produkt"], "název produktu", names=key)
+        if index == 1:
+            s["nejprodavanejsi_produkt"] = Slot(item["produkt"], "nejprodávanější produkt (název)", names=key)
         s[f"{key}_kusu"] = Slot(_pieces(item["kusu"]), f"prodáno kusů produktu {{{key}}}", key)
         if item["cisty_prijem_kc"]:
             s[f"{key}_kc"] = Slot(item["cisty_prijem_kc"], f"čistý příjem z produktu {{{key}}} v Kč", key)
@@ -256,8 +269,8 @@ def _mentions(sentence: str, available: dict[str, Slot]) -> list[tuple[int, str]
     blanked = SLOT_RE.sub(lambda m: " " * len(m.group()), sentence)  # "fab" inside {fab_kc} is no mention
     found = [(m.start(), NAMES[m.group(1).lower()]) for m in MENTION_RE.finditer(blanked)]
     found += [
-        (m.start(), m.group(1)) for m in SLOT_RE.finditer(sentence)
-        if m.group(1) in available and re.fullmatch(r"produkt\d+", m.group(1))
+        (m.start(), available[m.group(1)].names) for m in SLOT_RE.finditer(sentence)
+        if m.group(1) in available and available[m.group(1)].names
     ]
     return found
 
@@ -273,6 +286,13 @@ def check(text: str, available: dict[str, Slot]) -> list[str]:
         problems.append("číslo napsané přímo: " + ", ".join(digits))
     problems += [f"číslovka slovem „{m.group()}“" for m in NUMBER_WORD_RE.finditer(plain)]
     problems += [f"vlastní směr změny „{m.group()}“" for m in DIRECTION_RE.finditer(plain)]
+    problems += [f"vlastní pořadí „{m.group()}“" for m in RANKING_RE.finditer(plain)]
+    problems += [f"vlastní příčina „{m.group()}“" for m in CAUSE_RE.finditer(plain)]
+    product_names = {s.value for name, s in available.items() if re.fullmatch(r"produkt\d+", name)}
+    problems += [
+        f"název produktu napsaný přímo „{product}“" for product in sorted(product_names)
+        if product.casefold() in plain.casefold()
+    ]
     for sentence in SENTENCE_END_RE.split(text):
         mentions = _mentions(sentence, available)
         for m in SLOT_RE.finditer(sentence):

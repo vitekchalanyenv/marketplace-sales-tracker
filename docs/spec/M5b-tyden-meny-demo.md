@@ -55,12 +55,17 @@ Cíl: ukázat, jak AI zapojit tak, aby **nevymýšlela čísla**.
   - Kontrola (deterministická) zamítne text, když:
     - obsahuje číslici nebo číslovku slovem (jeden, dva, žádný, polovina…),
     - obsahuje vlastní slovo pro směr (vzrostl, klesl, víc, méně, lepší, horší…),
+    - (druhé kolo kontroly) obsahuje množství slovy (jediný, oba, několik, většina, menšina, pár), superlativ / pořadí
+      (`nej…`; pořadí jen přes značky `{nejlepsi_marketplace}` a `{nejprodavanejsi_produkt}`), příčinu (kvůli, díky,
+      protože…) nebo název produktu napsaný přímo místo značky,
     - obsahuje neznámou značku,
     - značka marketplace nebo produktu nemá ve větě před sebou nejblíž svůj název.
   - Hodnoty dosadí kód. Jeden opakovaný pokus s vypsanými problémy. Když neprojde ani napodruhé, e-mail odejde
     **jen s čísly od kódu** (rozhodnutí Vítka). Zamítnutý text se zapíše do logu.
   - Chybí klíč, API je nedostupné nebo odmítne → e-mail odejde bez komentáře a s důvodem.
-  - Co kontrola neumí: smysl věty bez čísel a přiřazení, když název nestojí před hodnotou. Uvedeno i v README.
+  - Co kontrola neumí: smysl věty bez čísel, pořadí a příčin; slova mimo seznamy; přiřazení, když název nestojí
+    před hodnotou. Uvedeno i v README. Další kolo zpřísňování se nedělá (klesající přínos).
+  - E-mail: komentář jako zvýrazněný odstavec nad čísly („Komentář od Claude“), zamítnuté pokusy jen v logu.
 - **Eval:** testy s podvrženým Claude (bez sítě), ručně psané dobré a špatné komentáře, včetně útoků z kontroly:
   přímo napsané (i správné) číslo, přehozené hodnoty marketplace i produktu, vlastní směr změny, číslovky slovem,
   neznámá značka. Dál: opakovaný pokus, vzdání, výpadek API.

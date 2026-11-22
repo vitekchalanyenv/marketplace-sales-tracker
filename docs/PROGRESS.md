@@ -29,7 +29,7 @@
 - 2026-11-22 – M5b (spec `docs/spec/M5b-tyden-meny-demo.md`): **týdenní shrnutí** v pondělním e-mailu (čísla od kódu,
   komentář Claude jen se zástupnými značkami, deterministická kontrola + eval v `tests/test_weekly.py`), **částky v Kč** kurzem ČNB ke dni
   prodeje, `exclude` pro zkušební prodeje, `demo` na vymyšlených datech, **CI** (GitHub Actions, Windows + Linux),
-  README pro čtenáře. Testy prošly (322). Po nezávislé kontrole 2026-11-22 kontrola předělána na zástupné
+  README pro čtenáře. Testy prošly (335). Po nezávislé kontrole 2026-11-22 kontrola předělána na zástupné
   značky (dřív propouštěla přehozená čísla a vymyšlený směr), demo a souhrn vyčištěny (viz AI_CHYBY). **Ověřeno:** Kč sedí s ručním přepočtem; komentář Claude ze skutečného API
   (`--dry-run --with-claude`) prošel kontrolou napoprvé, i ve verzi se značkami.
 

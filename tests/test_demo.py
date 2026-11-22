@@ -18,7 +18,9 @@ def test_demo(tmp_path, monkeypatch, capsys):
     assert "TENTO MĚSÍC (LEDEN 2026)" in out
     assert out.count("Nespárované listingy") == 1  # párování jednou na konci, ne po každém zdroji
     assert "Proti týdnu předtím příjem klesl o 19 %." in out  # směr dosadil kód
-    assert "Zamítnutý pokus: „Cosmos přinesl {cgtrader_kc}" in out
+    assert "pokus 1: komentář neprošel kontrolou" in out  # zamítnutý pokus jen v logu,
+    assert "Zamítnutý" not in out and "{cgtrader_kc}" not in out.split("--- souhrn")[1]  # ne v e-mailu
+    assert "Ukázkový komentář (ne od Claude): Za týden 19. 1. – 25. 1. 2026" in out
     assert "(≈ " in out  # částky v Kč (vymyšlený kurz)
     assert "zkušební běh, e-mail se neposlal" in out
     assert os.listdir(tmp_path) == []  # nic nevzniklo v pracovní složce

@@ -29,8 +29,9 @@ RATES = {"USD": Decimal("20.50"), "EUR": Decimal("24.75")}  # made up, not ČNB
 
 DEMO_BAD = "Cosmos přinesl {cgtrader_kc} a prodeje vzrostly."
 DEMO_GOOD = (
-    "Prodáno za týden {obdobi}: {celkem_kusu} za {celkem_kc}. Nejvíc přinesl Cosmos ({cosmos_kc}) "
-    "a nejprodávanější byl {produkt1}. Proti týdnu předtím příjem {smer_prijmu} o {zmena_procent}."
+    "Za týden {obdobi}: {celkem_kusu} za {celkem_kc}. Hlavním kanálem byl "
+    "{nejlepsi_marketplace} s příjmem {cosmos_kc}, z produktů vedl {nejprodavanejsi_produkt}. "
+    "Proti týdnu předtím příjem {smer_prijmu} o {zmena_procent}."
 )
 
 
@@ -125,7 +126,7 @@ def run(work: Path | None = None, send: daily.Send | None = None) -> int:
         return daily.run_daily(
             _steps(db_path, catalog, NOW), send=send, now=NOW,
             weekly_config=daily.WeeklyConfig(
-                demo_writer, None, _product_names(catalog), show_rejected=True,
+                demo_writer, None, _product_names(catalog),
                 label="Ukázkový komentář (ne od Claude)",
             ),
             **common,

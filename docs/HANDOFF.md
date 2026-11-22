@@ -24,7 +24,7 @@
 - **CI:** GitHub Actions (pytest + ruff, Windows i Linux), zelené.
 - **Historie gitu přepsaná** bez skutečných hodnot (git-filter-repo, spustil Vítek). Ověřeno strojovým prohledáním
   všech verzí souborů.
-- Testy **322 passed**, ruff čistý (2026-11-22).
+- Testy **335 passed**, ruff čistý (2026-11-22).
 
 ## Co udělat dál
 

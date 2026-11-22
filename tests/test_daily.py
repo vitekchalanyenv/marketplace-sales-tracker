@@ -95,10 +95,10 @@ def test_nove_prodeje_po_kusech_a_v_predmetu(env):
     env.run(steps)
     subject, text = env.last()
     assert subject == "Prodeje 22. 11.: 3 nové prodeje, čistě 22,50 USD"
-    assert "Cosmos – Stadion – 1× – čistě 12,25 USD (22. 11. 03:00)" in text
-    assert "Gumroad – Chata – 1× – čistě 10,00 USD" in text
+    assert "Stadion (Cosmos) – 1× – čistě 12,25 USD (22. 11. 03:00)" in text
+    assert "Chata (Gumroad) – 1× – čistě 10,00 USD" in text
     assert "Celkem: čistě 22,50 USD" in text
-    assert "<li>Cosmos – Stadion" in env.sent[-1].html()
+    assert "<li>Stadion (Cosmos)" in env.sent[-1].html()
 
 
 def test_druhy_souhrn_uz_prodeje_nevypise(env):
@@ -139,7 +139,7 @@ def test_refund(env):
     env.run([daily.Step("cosmos", "Cosmos", env.step(refunded))], now=NOW + timedelta(days=1))
     subject, text = env.last()
     assert "bez nových prodejů" in subject
-    assert "REFUNDY\n- Cosmos – Chata" in text
+    assert "REFUNDY\n- Chata (Cosmos)" in text
     assert "Zatím žádné prodeje." in text  # refundovaný prodej se do měsíce nepočítá
 
 
@@ -343,7 +343,7 @@ def test_castky_v_korunach(env):
     ))]
     run_with_rates(env, steps, rates)
     text = env.last()[1]
-    assert "Cosmos – Vymyšlený produkt – 1× – čistě 10,00 USD (≈ 200,00 Kč) (22. 11. 03:00)" in text
+    assert "Vymyšlený produkt (Cosmos) – 1× – čistě 10,00 USD (≈ 200,00 Kč) (22. 11. 03:00)" in text
     assert "Cosmos: 2 ks, čistě 20,00 USD (≈ 450,00 Kč)" in text  # každý prodej kurzem svého dne
     assert "Gumroad: 1 ks, čistě 50,00 CZK" in text and "50,00 CZK (≈" not in text
     assert "Celkem ve všech měnách: ≈ 600,00 Kč" in text  # 450 (USD) + 100 (4 EUR × 25) + 50 (CZK)
@@ -361,14 +361,14 @@ def test_kurz_nedostupny(env):
 def test_refund_zaporne_a_rok(env):
     old = datetime(2025, 3, 29, 13, 30, tzinfo=UTC)
     env.run([daily.Step("cosmos", "Cosmos", env.step(sale("cosmos", "c1", 1000, sold_at=old, title="Chata")))])
-    assert "Chata – 1× – čistě 10,00 USD (29. 3. 2025 14:30)" in env.last()[1]  # jiný rok → s rokem
+    assert "Chata (Cosmos) – 1× – čistě 10,00 USD (29. 3. 2025 14:30)" in env.last()[1]  # jiný rok → s rokem
     env.run([daily.Step("cosmos", "Cosmos", env.step(
         sale("cosmos", "c1", 1000, sold_at=old, title="Chata", status=Status.REFUNDED),
         sale("fab", "f-ref", -880, quantity=-1, status=Status.REFUNDED, title="Fab chata"),
     ))], now=NOW + timedelta(days=1))
     text = env.last()[1]
-    assert "Cosmos – Chata – 1× – vráceno -10,00 USD (29. 3. 2025 14:30)" in text
-    assert "Fab – Fab chata – 1× – vráceno -8,80 USD (22. 11.)" in text  # Fab má jen den, bez času
+    assert "Chata (Cosmos) – 1× – vráceno -10,00 USD (29. 3. 2025 14:30)" in text
+    assert "Fab chata (Fab) – 1× – vráceno -8,80 USD (22. 11.)" in text  # Fab má jen den, bez času
 
 
 
@@ -387,13 +387,13 @@ def test_tydenni_sekce_jednou_za_tyden(env):
     subject, text = env.last()
     assert subject.endswith(" · týdenní shrnutí")
     assert text.startswith(
-        "MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- Komentář od Claude: Za týden 9. 11. – 15. 11. 2026 se prodalo 0 kusů.\n"
+        "MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\nKomentář od Claude: Za týden 9. 11. – 15. 11. 2026 se prodalo 0 kusů.\n"
         "- Celkem: 0 ks, žádné prodeje"
     )
     monday = NOW + timedelta(days=1)  # 23. 11. → týden 16.–22. 11.
     run_weekly(env, lambda facts, rejected: good, now=monday)
     subject, text = env.last()
-    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Komentář od Claude: Za týden 16. 11. – 22. 11. 2026 se prodalo 1 kus.\n- Celkem: 1 ks" in text
+    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\nKomentář od Claude: Za týden 16. 11. – 22. 11. 2026 se prodalo 1 kus.\n- Celkem: 1 ks" in text
     run_weekly(env, lambda facts, rejected: good, now=monday + timedelta(days=1))
     assert "týdenní" not in env.last()[0]  # úterý: už odesláno
     assert env.state()["weekly_sent_for"] == "2026-11-16"
@@ -430,4 +430,4 @@ def test_celkem_nove_a_predmet_v_kc(env):
     subject, text = env.last()
     assert subject == "Prodeje 22. 11.: 3 nové prodeje, čistě 12,50 USD (≈ 250,00 Kč)"
     assert "- Celkem nové: čistě 12,50 USD (≈ 250,00 Kč)" in text  # stejné číslo jako v předmětu
-    assert "Gumroad – Dárek – 1× – zdarma (0,00 USD) (22. 11. 03:00)" in text
+    assert "Dárek (Gumroad) – 1× – zdarma (0,00 USD) (22. 11. 03:00)" in text

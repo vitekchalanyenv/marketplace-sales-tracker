@@ -88,11 +88,13 @@ def test_radky_cisel(conn):
 GOOD = [
     "Za týden {obdobi} se prodalo {celkem_kusu} a čistý příjem byl {celkem_kc}.",
     "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}.",
-    "Nejlépe šel {produkt1}, který přinesl {produkt1_kc}.",
+    "Z produktů vedl {nejprodavanejsi_produkt}, který přinesl {produkt1_kc}.",
+    "Hlavním kanálem byl {nejlepsi_marketplace} s příjmem {cosmos_kc}.",
+    "Produkt {produkt1} přinesl {produkt1_kc}.",
     "Cosmos prodal {cosmos_kusu} a Fab {fab_kusu}.",
     "Kusů se prodalo {smer_kusu} než týden předtím, rozdíl je {zmena_kusu}.",
     "Z Cosmosu přišlo {cosmos_kc}. Dobrý týden.",
-    "Dobrý týden, hlavně díky Cosmosu.",
+    "Dobrý týden pro Cosmos.",
 ]
 BAD = [
     # čísla napsaná přímo (i ta, která v datech jsou – i správné číslo může být u špatné věci)
@@ -111,6 +113,18 @@ BAD = [
     ("Cosmos vydělal {fab_kc}.", "{fab_kc} patří k Fab, ale ve větě stojí u Cosmos"),
     ("{produkt2} vydělal {produkt1_kc}.", "{produkt1_kc} patří k produkt1, ale ve větě stojí u produkt2"),
     ("Celkem přišlo {cosmos_kc}.", "{cosmos_kc} stojí ve větě bez názvu"),
+    # množství, pořadí a příčiny slovy (druhé kolo nezávislé kontroly)
+    ("Gumroad měl jediný prodej, Cosmos oba zbylé.", "číslovka slovem „jediný“"),
+    ("Gumroad měl jediný prodej, Cosmos oba zbylé.", "číslovka slovem „oba“"),
+    ("Prodalo se několik kusů, většinou na Gumroadu.", "číslovka slovem „několik“"),
+    ("Prodalo se několik kusů, většinou na Gumroadu.", "číslovka slovem „většinou“"),
+    ("Prodal se jen pár kusů.", "číslovka slovem „pár“"),
+    ("Nejlépe se dařilo na Gumroadu.", "vlastní pořadí „Nejlépe“"),
+    ("Gumroad byl nejsilnější kanál.", "vlastní pořadí „nejsilnější“"),
+    ("Příjem {smer_prijmu}, hlavně kvůli Gumroadu.", "vlastní příčina „kvůli“"),
+    ("Dobrý týden, hlavně díky Cosmosu.", "vlastní příčina „díky“"),
+    ("Většinu přinesl produkt Medieval Village.", "název produktu napsaný přímo „Medieval Village“"),
+    ("Hlavním kanálem byl {nejlepsi_marketplace} s příjmem {fab_kc}.", "{fab_kc} patří k Fab, ale ve větě stojí u Cosmos"),
     # značka, která neexistuje
     ("Příjem byl {celkem_eur}.", "neznámá značka {celkem_eur}"),
 ]

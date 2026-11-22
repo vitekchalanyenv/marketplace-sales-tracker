@@ -59,6 +59,8 @@ class Snapshot:
 class Section:
     title: str
     lines: list[str]
+    intro: str | None = None  # a paragraph above the list (the weekly commentary)
+    intro_label: str | None = None
 
 
 @dataclass
@@ -70,6 +72,8 @@ class Report:
         parts = []
         for section in self.sections:
             parts.append(section.title.upper())
+            if section.intro:
+                parts.append(f"{section.intro_label}: {section.intro}" if section.intro_label else section.intro)
             parts.extend(f"- {line}" for line in section.lines)
             parts.append("")
         return "\n".join(parts).rstrip() + "\n"
@@ -77,7 +81,14 @@ class Report:
     def html(self) -> str:
         parts = ['<div style="font-family:sans-serif;font-size:14px">']
         for section in self.sections:
-            parts.append(f"<h3>{html.escape(section.title)}</h3><ul>")
+            parts.append(f"<h3>{html.escape(section.title)}</h3>")
+            if section.intro:
+                label = f"<b>{html.escape(section.intro_label)}:</b> " if section.intro_label else ""
+                parts.append(
+                    '<p style="font-style:italic;background:#f5f3ff;border-left:3px solid #8b5cf6;'
+                    f'padding:8px 12px;margin:0 0 8px">{label}{html.escape(section.intro)}</p>'
+                )
+            parts.append("<ul>")
             parts.extend(f"<li>{html.escape(line)}</li>" for line in section.lines)
             parts.append("</ul>")
         parts.append("</div>")
@@ -94,7 +105,6 @@ class WeeklyConfig:
     writer: Callable[..., str] | None  # Claude (weekly.ClaudeWriter) or None = no commentary
     note_without_writer: str | None = None
     product_name: Callable[[str], str] = lambda key: key
-    show_rejected: bool = False  # demo: also show rejected attempts in the report
     label: str = "Komentář od Claude"
 
 
@@ -130,7 +140,7 @@ def snapshot(conn: sqlite3.Connection) -> Snapshot:
     return Snapshot(max_rowid, frozenset(tuple(row) for row in rows))
 
 
-SALE_COLUMNS = "marketplace, product_title, quantity, net_cents, currency, sold_at"
+SALE_COLUMNS = "marketplace, product_title, quantity, net_cents, currency, sold_at, product_key"
 
 
 def new_sales(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
@@ -240,10 +250,12 @@ def _approx_czk(haler: int | None, currency: str) -> str:
     return f" (≈ {format_money(haler, 'Kč')})"
 
 
-def _sale_line(row: tuple, czk=None, year: int | None = None, refund: bool = False) -> str:
-    """One sale; a refund always shows a negative amount (Fab stores refunds as negative rows,
-    Gumroad and Cosmos as the original sale with a refund status)."""
-    marketplace, title, quantity, net, currency, sold_at = row
+def _sale_line(
+    row: tuple, czk=None, year: int | None = None, refund: bool = False, product_name=None
+) -> str:
+    """One sale: catalog product name, then the marketplace. A refund always shows a negative amount
+    (Fab stores refunds as negative rows, Gumroad and Cosmos as the original sale with a refund status)."""
+    marketplace, title, quantity, net, currency, sold_at, key = row
     if refund:
         quantity, net = abs(quantity), -abs(net)
     haler = czk(net, currency, sold_at) if czk else None
@@ -253,13 +265,17 @@ def _sale_line(row: tuple, czk=None, year: int | None = None, refund: bool = Fal
     else:
         label = "vráceno" if refund else "čistě"
         amount = f"{label} {format_money(net, currency)}{_approx_czk(haler, currency)}"
-    return f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – {amount} ({when})"
+    if key and product_name:
+        name = product_name(key)
+    else:  # not in the catalog yet: the marketplace's own title
+        name = title or "(bez názvu)"
+    return f"{name} ({_name(marketplace)}) – {quantity}× – {amount} ({when})"
 
 
 def _new_totals(sales: list[tuple], czk) -> list[str]:
     """'čistě 63,21 USD (≈ 1 295,81 Kč)' per currency of the new sales."""
     by_currency: dict[str, list[int | None]] = {}
-    for _marketplace, _title, _quantity, net, currency, sold_at in sales:
+    for _marketplace, _title, _quantity, net, currency, sold_at, *_ in sales:
         values = by_currency.setdefault(currency, [0, 0])
         values[0] += net
         haler = (net if currency == fx.HOME else czk(net, currency, sold_at)) if czk else None
@@ -296,6 +312,7 @@ def build_report(
     czk=None,
     month_czk: dict[tuple[str, str], int | None] | None = None,
     weekly_section: Section | None = None,
+    product_name=None,
 ) -> Report:
     """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK."""
     failed = [r for r in results if not r.ok]
@@ -308,18 +325,21 @@ def build_report(
 
     report.sections.append(Section(
         "Nové prodeje od minulého souhrnu",
-        [_sale_line(row, czk, day.year) for row in sales]
+        [_sale_line(row, czk, day.year, product_name=product_name) for row in sales]
         + [f"Celkem nové: {total}" for total in totals_new]
         or ["Žádné nové prodeje."],
     ))
     if refunds:
         report.sections.append(Section(
-            "Refundy", [_sale_line(row, czk, day.year, refund=True) for row in refunds]
+            "Refundy",
+            [_sale_line(row, czk, day.year, refund=True, product_name=product_name) for row in refunds],
         ))
 
     month_lines = []
     totals: dict[str, int] = {}
     totals_czk: dict[str, int | None] = {}
+    # within a currency, the marketplace with the highest income first (same order as the weekly section)
+    month = sorted(month, key=lambda r: (r[0], -(month_czk.get((r[0], r[1])) or r[3]), r[1]))
     for currency, marketplace, units, net in month:
         haler = month_czk.get((currency, marketplace))
         month_lines.append(
@@ -406,9 +426,15 @@ def run_daily(
     now: datetime,
     make_rates=None,
     weekly_config: WeeklyConfig | None = None,
+    product_name: Callable[[str], str] | None = None,
 ) -> int:
-    """make_rates(conn, today) -> fx.Rates for CZK amounts; None = amounts in original currency only."""
-    """Run all steps and send the report. send=None is a dry run: print only, change no state."""
+    """Run all steps and send the report. send=None is a dry run: print only, change no state.
+
+    make_rates(conn, today) -> fx.Rates for CZK amounts (None = original currency only);
+    product_name(key) -> catalog name, so one product has one name everywhere in the report.
+    """
+    if product_name is None and weekly_config is not None:
+        product_name = weekly_config.product_name
     state = _load_state(state_path)
     conn = db.connect(db_path)
     try:
@@ -437,26 +463,22 @@ def run_daily(
         weekly_section = None
         weekly_log: list[str] = []
         if weekly_config is not None and state.get("weekly_sent_for") != week_key:
-            facts = weekly.week_facts(conn, day, czk, weekly_config.product_name)
+            facts = weekly.week_facts(conn, day, czk, product_name or weekly_config.product_name)
             if weekly_config.writer is None:
                 comment = weekly.Commentary(None, weekly_config.note_without_writer, [])
             else:
                 comment = weekly.commentary(facts, weekly_config.writer)
             weekly_log = comment.log
-            rejected_lines = [
-                f"Zamítnutý pokus: „{text}“ – {'; '.join(problems)}"
-                for text, problems in comment.rejected
-            ] if weekly_config.show_rejected else []
             weekly_section = Section(
                 f"Minulý týden ({facts['obdobi']})",
-                ([f"{weekly_config.label}: {comment.text}"] if comment.text else [])
-                + weekly.fact_lines(facts)
-                + ([comment.note] if comment.note else [])
-                + rejected_lines,
-            )
+                weekly.fact_lines(facts) + ([comment.note] if comment.note else []),
+                intro=comment.text,
+                intro_label=weekly_config.label,
+            )  # rejected attempts go to the log only
         report = build_report(
             day=day, results=results, sales=sales, refunds=refunds, month=month, state=state,
             now=now, czk=czk, month_czk=month_czk, weekly_section=weekly_section,
+            product_name=product_name,
         )
     finally:
         conn.close()
