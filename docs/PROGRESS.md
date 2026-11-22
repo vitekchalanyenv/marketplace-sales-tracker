@@ -21,6 +21,12 @@
   z API stránky). Napsáno, testy prošly (196), **ověřeno na skutečném účtu** 2026-11-21: všechny transakce,
   tržba i payout sedí na cent, druhý běh 0 nových (zastaví na 1. stránce), vše spárováno.
   Zbývá: ruční kopie (čeká na vzorek), refund (formát `refund_details` neznámý), jak dlouho vydrží přihlášení.
+- M5 – denní agent: `run daily` (Gumroad, Cosmos, Fab; každý krok zvlášť, log v `data/private/logs/`,
+  notifikace Windows o nových prodejích, refundech a chybách) a úloha v Plánovači (`scripts/install_task.ps1`,
+  denně 8:00, po zapnutí doběhne zmeškaný běh). Napsáno, testy prošly (211), **ověřeno na skutečných datech**
+  2026-11-22: ruční běh našel 1 nový prodej z Cosmosu, běh přes Plánovač (pythonw, bez konzole) skončil s kódem 0.
+  Na skutečných datech neověřeno: notifikace při chybě (vypršené přihlášení), doběhnutí po zapnutí PC.
+  Týdenní shrnutí zbývá.
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
 
@@ -31,9 +37,6 @@
 
 ## Otevřené otázky
 
-- M5 (požadavek Vítka 2026-11-21): **denní agent**, který sám spouští stahování (Gumroad, Cosmos, importy souborů)
-  a **dá vědět, když něco selže** (vypršené přihlášení Cosmosu, chybný report, výpadek). Upřesnit: jak dávat vědět
-  (notifikace Windows / e-mail / jinak), kdy běžet, co dělat, když je počítač vypnutý.
 - Měny napříč marketplaces: do jaké měny převádět pro týdenní shrnutí (USD? CZK, protože výplaty z Gumroadu jdou v CZK?)
   a odkud brát kurzy (např. ČNB)? Rozhodnout před milníkem se shrnutím.
 
@@ -45,6 +48,8 @@
 
 ## Rozhodnutí
 
+- 2026-11-22 – Denní agent: notifikace Windows (i o nových prodejích), denně 8:00, počítač nebudit, zmeškaný běh
+  po zapnutí; upozornění na stáří stažení od 3 dnů.
 - 2026-11-21 – Cosmos agent = Playwright s vlastním profilem (pokus úspěšný); payout transakce s víc produkty se dělí
   podle skutečně zaplacených částek produktů (`items[].amount`), ne ceníku.
 - 2026-11-21 – Cosmos: obě cesty (ruční kopie tabulky + agent v prohlížeči, jednou denně), společné jádro;

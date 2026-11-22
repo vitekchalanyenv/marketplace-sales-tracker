@@ -1,4 +1,4 @@
-"""Command line: sync gumroad, import fab, catalog check/match (see README)."""
+"""Command line: sync gumroad|cosmos, import fab, catalog check|match, run daily (see README)."""
 
 import argparse
 import json
@@ -12,11 +12,13 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import cosmos, db, fab, gumroad
+from sales_tracker import cosmos, daily, db, fab, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
 FAB_DIR = Path("data/private/fab")
+STATE_PATH = Path("data/private/agent_state.json")
+LOG_DIR = Path("data/private/logs")
 REFUND_WINDOW_DAYS = 30
 
 
@@ -240,7 +242,7 @@ def sync_cosmos(
         except cosmos.SessionExpired as exc:
             print(
                 f"Přihlášení do Cosmosu vypršelo ({exc}). Nic se neuložilo. Přihlas se: "
-                "uv run python -m sales_tracker sync cosmos --login"
+                f"uv run python -m sales_tracker {daily.COSMOS_LOGIN_HINT}"
             )
             return 1
         except cosmos.FetchError as exc:
@@ -293,6 +295,36 @@ def run_sync_cosmos() -> int:
         return sync_cosmos(DB_PATH, browser.load_page)
 
 
+def run_sync_gumroad(since: date | None = None) -> int:
+    # Explicit path: without it python-dotenv searches upwards from this file, not from cwd.
+    load_dotenv(Path.cwd() / ".env")
+    token = os.environ.get("GUMROAD_ACCESS_TOKEN", "").strip()
+    if not token:
+        print("Chybí GUMROAD_ACCESS_TOKEN v .env. Zkopíruj .env.example jako .env a doplň token.")
+        return 1
+    return sync_gumroad(token, DB_PATH, since=since)
+
+
+def run_import_fab_daily() -> int:
+    paths = fab_report_paths(None, FAB_DIR)
+    if not paths:
+        print(f"Žádný report z Fabu v {FAB_DIR}/, přeskakuji.")
+        return 0
+    return import_fab(paths, DB_PATH)
+
+
+def run_daily() -> int:
+    steps = [
+        daily.Step("gumroad", "Gumroad", run_sync_gumroad),
+        daily.Step("cosmos", "Cosmos", run_sync_cosmos),
+        daily.Step("fab", "Fab", run_import_fab_daily),
+    ]
+    return daily.run_daily(
+        steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,
+        notify=daily.windows_notify, now=datetime.now(UTC),
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sales_tracker")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -305,6 +337,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     imp.add_argument("path", nargs="?", type=Path, help=f"CSV soubor; bez něj všechna CSV z {FAB_DIR}")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
+    run = commands.add_parser("run", help="denní agent: stáhne vše a pošle notifikaci")
+    run.add_argument("job", choices=["daily"])
     args = parser.parse_args(argv)
     if args.command == "sync" and args.login and args.marketplace != "cosmos":
         parser.error("--login je jen pro cosmos")
@@ -322,11 +356,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return catalog_check(CATALOG_PATH, DB_PATH)
         return catalog_match(CATALOG_PATH, DB_PATH)
 
-    # Explicit path: without it python-dotenv searches upwards from this file, not from cwd.
-    load_dotenv(Path.cwd() / ".env")
-    token = os.environ.get("GUMROAD_ACCESS_TOKEN", "").strip()
-    if not token:
-        print("Chybí GUMROAD_ACCESS_TOKEN v .env. Zkopíruj .env.example jako .env a doplň token.")
-        return 1
+    if args.command == "run":
+        return run_daily()
 
-    return sync_gumroad(token, DB_PATH, since=args.since)
+    return run_sync_gumroad(args.since)

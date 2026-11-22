@@ -44,6 +44,11 @@ uv run python -m sales_tracker sync cosmos
 uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
 uv run python -m sales_tracker import fab path/to/report.csv
 
+# daily agent: all sources, log in data/private/logs/, Windows notification on new sales or failures
+uv run python -m sales_tracker run daily
+powershell -ExecutionPolicy Bypass -File scripts\install_task.ps1   # Task Scheduler, daily 08:00, catches up after boot
+powershell -ExecutionPolicy Bypass -File scripts\uninstall_task.ps1
+
 # product catalog (data/private/katalog.yaml, see data/sample/katalog.yaml)
 uv run python -m sales_tracker catalog check   # validate + list unmatched sales with ready-to-paste YAML
 uv run python -m sales_tracker catalog match   # re-assign every sale to a product
