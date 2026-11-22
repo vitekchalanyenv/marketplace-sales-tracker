@@ -4,13 +4,17 @@ Asks Claude N times for the commentary on the same week and records how often it
 on the first attempt, after the retry, or not at all, and which rules rejected it. Costs real
 money (a few cents per run), so it is run by hand, never in tests or CI.
 
-Usage: uv run python scripts/eval_commentary.py [runs]   (needs ANTHROPIC_API_KEY in .env)
-Writes docs/eval/commentary-real-model.json (made-up data only, safe to commit).
+Besides passing the check it measures content: how many value placeholders a comment uses, how
+many marketplaces it lists, sentences, and Czech number-agreement risks ("prodalo se {celkem_kusu}").
+
+Usage: uv run python scripts/eval_commentary.py [runs] [tag]   (needs ANTHROPIC_API_KEY in .env)
+Writes docs/eval/commentary-real-model-<tag>.json (made-up data only, safe to commit).
 """
 
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 from collections import Counter
@@ -22,7 +26,11 @@ from dotenv import load_dotenv
 
 from sales_tracker import daily, db, demo, weekly
 
-OUT = Path(__file__).resolve().parents[1] / "docs" / "eval" / "commentary-real-model.json"
+EVAL_DIR = Path(__file__).resolve().parents[1] / "docs" / "eval"
+NAME_SLOTS = re.compile(r"(obdobi|predchozi_obdobi|produkt\d+|nejlepsi_marketplace|nejprodavanejsi_produkt|smer_\w+)")
+AGREEMENT_RISK = re.compile(
+    r"(prodal[oaiy]? se|se prodal[oaiy]?|prodalo) \{\w*kusu\}|\{\w*kusu\} kus", re.IGNORECASE
+)
 CATEGORIES = [
     ("číslo napsané přímo", "number written out"),
     ("číslovka slovem", "number / quantity word"),
@@ -43,6 +51,35 @@ def category(problem: str) -> str:
     return "other"
 
 
+def content(text: str) -> dict:
+    """Content measures of one accepted comment (written with placeholders)."""
+    names = weekly.SLOT_RE.findall(text)
+    plain = weekly.SLOT_RE.sub(" ", text)
+    listed = {m.group(1).lower() for m in weekly.MENTION_RE.finditer(plain)}
+    listed |= {n.removesuffix("_kc").removesuffix("_kusu") for n in names
+               if n.split("_")[0] in weekly.NAMES and n.endswith(("_kc", "_kusu"))}
+    return {
+        "value_placeholders": sum(1 for n in names if not NAME_SLOTS.fullmatch(n)),
+        "marketplaces_named": len(listed),
+        "sentences": len([s for s in weekly.SENTENCE_END_RE.split(text.strip()) if s]),
+        "agreement_risk": bool(AGREEMENT_RISK.search(text)),
+    }
+
+
+def content_summary(results: list[dict]) -> dict:
+    accepted = [content(r["attempts"][-1]["text"]) for r in results if r["final"] is not None]
+    if not accepted:
+        return {}
+    def avg(key):
+        return round(sum(c[key] for c in accepted) / len(accepted), 1)
+    return {
+        "avg_value_placeholders": avg("value_placeholders"),
+        "avg_marketplaces_named": avg("marketplaces_named"),
+        "avg_sentences": avg("sentences"),
+        "agreement_risk": sum(c["agreement_risk"] for c in accepted),
+    }
+
+
 def demo_facts(work: Path) -> dict:
     with redirect_stdout(io.StringIO()):
         demo.run(work=work)
@@ -56,7 +93,7 @@ def demo_facts(work: Path) -> dict:
         conn.close()
 
 
-def main(runs: int) -> None:
+def main(runs: int, tag: str) -> None:
     load_dotenv(Path.cwd() / ".env")
     key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key:
@@ -103,15 +140,17 @@ def main(runs: int) -> None:
         "gave_up": outcomes["gave_up"],
         "api_error": outcomes["error"],
         "rejections_by_rule": dict(rules.most_common()),
+        "content": content_summary(results),
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(
+    out = EVAL_DIR / f"commentary-real-model-{tag}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
         json.dumps({"summary": summary, "results": results}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    print(f"Saved {OUT}")
+    print(f"Saved {out}")
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 20)
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 20, sys.argv[2] if len(sys.argv) > 2 else "latest")

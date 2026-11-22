@@ -33,7 +33,8 @@
   značky (dřív propouštěla přehozená čísla a vymyšlený směr), demo a souhrn vyčištěny (viz AI_CHYBY). **Ověřeno:** Kč sedí s ručním přepočtem; komentář Claude ze skutečného API
   (`--dry-run --with-claude`) prošel kontrolou napoprvé, i ve verzi se značkami. **Eval na skutečném modelu**
   (`scripts/eval_commentary.py`, 20 běhů na demo týdnu): 20× napoprvé, 0× po opakování, 0× vzdáno. Slabina je obsah:
-  komentář opakuje skoro všechna čísla a občas špatná shoda („se prodalo 4 kusy“) – kandidát na úpravu promptu.
+  komentář opakoval skoro všechna čísla a špatná shoda („se prodalo 4 kusy“). Prompt v2 (vybrat 1–2 věci, neopakovat
+  přehled, pozor na shodu): 20× napoprvé, značek s čísly 12,8 → 0,9, riziko shody 17 → 0 z 20 (`docs/eval/`).
 
 ## Rozpracováno
 

@@ -88,12 +88,17 @@ Cosmos přinesl {cgtrader_kc} a prodeje vzrostly.
 → rejected: own direction "vzrostly"; {cgtrader_kc} belongs to CGTrader but stands next to Cosmos
 ```
 
-**Measured on the real model:** 20 runs of `claude-opus-5-5` on the demo week — **20 passed on the first attempt**,
-0 needed the retry, 0 gave up ([`scripts/eval_commentary.py`](scripts/eval_commentary.py), raw outputs in
-[`docs/eval/commentary-real-model.json`](docs/eval/commentary-real-model.json)). So the strict check does not starve the
-feature. Two caveats: it is one week of data, so little variety; and the outputs show the next thing to improve is
-*content*, not safety — Claude tends to restate most of the numbers already listed below the comment, and sometimes
-gets Czech number agreement wrong ("se prodalo 4 kusy").
+**Measured on the real model** ([`scripts/eval_commentary.py`](scripts/eval_commentary.py), 20 runs of
+`claude-opus-5-5` on the demo week each, raw outputs in [`docs/eval/`](docs/eval/)):
+
+| Prompt | Passed 1st try | After retry | Gave up | Value placeholders per comment | Sentences | Number-agreement risk |
+|---|---|---|---|---|---|---|
+| v1: "write 2–4 sentences" | 20 | 0 | 0 | 12.8 | 4 | 17 of 20 |
+| v2: "pick one or two things, don't repeat the overview below" | 20 | 0 | 0 | 0.9 | 2 | 0 of 20 |
+
+The strict check never starved the feature. What the first eval exposed was *content*: Claude restated almost every
+number already listed below the comment and kept writing "se prodalo {celkem_kusu}" (wrong Czech agreement with
+"4 kusy"). v2 of the prompt fixed both — measured, not assumed. Caveat: one week of data, so little variety.
 
 The check itself is tested against an eval set of hand-written good and bad commentaries
 ([`tests/test_weekly.py`](tests/test_weekly.py)), including every attack from two rounds of independent review:

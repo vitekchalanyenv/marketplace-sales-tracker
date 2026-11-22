@@ -17,10 +17,10 @@ def test_demo(tmp_path, monkeypatch, capsys):
     assert "- Celkem nové: čistě 63,21 USD (≈ 1 295,81 Kč)" in out  # předmět = tělo
     assert "TENTO MĚSÍC (LEDEN 2026)" in out
     assert out.count("Nespárované listingy") == 1  # párování jednou na konci, ne po každém zdroji
-    assert "příjem klesl o 311,61 Kč (19 %)" in out  # směr a čísla dosadil kód
+    assert "z kanálů nejvíc přinesl Cosmos." in out  # směr, čísla i pořadí dosadil kód
     assert "pokus 1: komentář neprošel kontrolou" in out  # zamítnutý pokus jen v logu,
     assert "Zamítnutý" not in out and "{cgtrader_kc}" not in out.split("--- souhrn")[1]  # ne v e-mailu
-    assert "Komentář od Claude (skutečný výstup na vymyšlených datech, uložený pro demo): Za období 19. 1." in out
+    assert "Komentář od Claude (skutečný výstup na vymyšlených datech, uložený pro demo): Příjem klesl o 19 % proti týdnu předtím." in out
     assert "(≈ " in out  # částky v Kč (vymyšlený kurz)
     assert "zkušební běh, e-mail se neposlal" in out
     assert os.listdir(tmp_path) == []  # nic nevzniklo v pracovní složce

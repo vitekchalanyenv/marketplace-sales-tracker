@@ -47,7 +47,14 @@ MENTION_RE = re.compile(r"\b(gumroad|cosmos|fab|cgtrader)\w*", re.IGNORECASE)
 SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
 
 SYSTEM = """Píšeš krátký komentář k týdennímu přehledu prodejů 3D assetů pro jejich autora.
-Napiš 2–4 věty česky, věcně a lidsky (co se dařilo, srovnání s předchozím týdnem, co stojí za pozornost).
+Pod tvým komentářem je v e-mailu přehled se všemi čísly (celkem, každý marketplace, předchozí týden).
+Neopakuj ho. Vyber jednu nebo dvě věci, které stojí za pozornost (třeba jak se týden liší od předchozího,
+nebo který kanál či produkt vedl), a napiš 2–3 krátké věty česky, věcně a lidsky.
+Použij nejvýš tři značky s hodnotou a nevyjmenovávej všechny marketplaces.
+
+Značky s kusy už obsahují slovo „kus/kusy/kusů“ ve správném tvaru (např. „4 kusy“). Proto za ně slovo
+„kusů“ nepiš a nestav kolem nich sloveso, které se musí shodovat s počtem (ne „prodalo se {celkem_kusu}“,
+ale třeba „celkem {celkem_kusu}“ nebo „prodej: {celkem_kusu}“).
 
 Čísla do textu nepíšeš ty. Dostaneš seznam značek s hodnotami a významem a místo čísla napíšeš značku
 ve složených závorkách, např. „Cosmos přinesl {cosmos_kc}.“ Hodnotu doplní program.

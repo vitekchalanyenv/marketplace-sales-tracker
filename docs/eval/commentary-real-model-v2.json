@@ -1,0 +1,241 @@
+{
+  "summary": {
+    "date": "2026-11-22",
+    "model": "claude-opus-5-5",
+    "data": "demo (made-up), week 19. 1. – 25. 1. 2026",
+    "runs": 20,
+    "first_attempt": 20,
+    "after_retry": 0,
+    "gave_up": 0,
+    "api_error": 0,
+    "rejections_by_rule": {},
+    "content": {
+      "avg_value_placeholders": 0.9,
+      "avg_marketplaces_named": 0.0,
+      "avg_sentences": 2.0,
+      "agreement_risk": 0
+    }
+  },
+  "results": [
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti týdnu předtím {smer_prijmu} o {zmena_procent}. Mezi kanály vedl {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti týdnu předtím klesl o 19 %. Mezi kanály vedl Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_kc}. Nejvíc tentokrát vynesl {nejlepsi_marketplace}, takže stojí za to sledovat, jestli si tuhle pozici udrží i příští týden.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 311,61 Kč. Nejvíc tentokrát vynesl Cosmos, takže stojí za to sledovat, jestli si tuhle pozici udrží i příští týden.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc se dařilo produktu {nejprodavanejsi_produkt}, který vydělal veškerý příjem týdne.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc se dařilo produktu Medieval Village Environment, který vydělal veškerý příjem týdne.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc vynesl {nejlepsi_marketplace}, ten se vyplatí dál sledovat.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc vynesl Cosmos, ten se vyplatí dál sledovat.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejvíc vydělal marketplace {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejvíc vydělal marketplace Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Čistý příjem proti týdnu předtím {smer_prijmu} o {zmena_procent}. Kanálem s nejvyšším příjmem byl {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Čistý příjem proti týdnu předtím klesl o 19 %. Kanálem s nejvyšším příjmem byl Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejlépe se prodával {nejprodavanejsi_produkt}, který byl tahounem týdne.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejlépe se prodával Medieval Village Environment, který byl tahounem týdne.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Prodeje táhl {nejprodavanejsi_produkt} a z kanálů nejvíc přinesl {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Prodeje táhl Medieval Village Environment a z kanálů nejvíc přinesl Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc tentokrát vydělal {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc tentokrát vydělal Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejvíc se dařilo produktu {nejprodavanejsi_produkt}, takže stojí za to sledovat ho i v dalších týdnech.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejvíc se dařilo produktu Medieval Village Environment, takže stojí za to sledovat ho i v dalších týdnech.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti týdnu předtím {smer_prijmu}. Nejvíc vynesl {nejlepsi_marketplace} a nejprodávanějším produktem byl {nejprodavanejsi_produkt}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti týdnu předtím klesl. Nejvíc vynesl Cosmos a nejprodávanějším produktem byl Medieval Village Environment.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejvíc vynesl kanál {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejvíc vynesl kanál Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc vynesl {nejlepsi_marketplace} a z produktů táhl {nejprodavanejsi_produkt}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc vynesl Cosmos a z produktů táhl Medieval Village Environment.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc tentokrát vynesl {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc tentokrát vynesl Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejlépe se tentokrát dařilo na {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejlépe se tentokrát dařilo na Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Nejvíc vynesl {nejlepsi_marketplace}. Uvidíme, jak se vyvine příští týden.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Nejvíc vynesl Cosmos. Uvidíme, jak se vyvine příští týden.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. Tahounem týdne byl {nejprodavanejsi_produkt} a nejvíc vydělal na {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem klesl o 19 % proti týdnu předtím. Tahounem týdne byl Medieval Village Environment a nejvíc vydělal na Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejvíc vydělal {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejvíc vydělal Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti týdnu předtím {smer_prijmu} o {zmena_procent}. Nejvíc přinesl {nejlepsi_marketplace}.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti týdnu předtím klesl o 19 %. Nejvíc přinesl Cosmos.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Příjem proti předchozímu týdnu {smer_prijmu} o {zmena_procent}. Nejvíc tentokrát vydělal {nejlepsi_marketplace}, takže stojí za to ho dál sledovat.",
+          "problems": []
+        }
+      ],
+      "final": "Příjem proti předchozímu týdnu klesl o 19 %. Nejvíc tentokrát vydělal Cosmos, takže stojí za to ho dál sledovat.",
+      "note": null
+    }
+  ]
+}

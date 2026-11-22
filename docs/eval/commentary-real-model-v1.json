@@ -8,7 +8,14 @@
     "after_retry": 0,
     "gave_up": 0,
     "api_error": 0,
-    "rejections_by_rule": {}
+    "rejections_by_rule": {},
+    "prompt": "v1 (2–4 věty, bez pokynu k výběru)",
+    "content": {
+      "avg_value_placeholders": 12.8,
+      "avg_marketplaces_named": 3.0,
+      "avg_sentences": 4.0,
+      "agreement_risk": 17
+    }
   },
   "results": [
     {

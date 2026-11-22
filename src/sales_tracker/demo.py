@@ -28,14 +28,11 @@ NEW_SINCE = "2026-01-19T23:00:00Z"  # sales from 20. 1. (local) on are new since
 RATES = {"USD": Decimal("20.50"), "EUR": Decimal("24.75")}  # made up, not ČNB
 
 DEMO_BAD = "Cosmos přinesl {cgtrader_kc} a prodeje vzrostly."
-# A real output of claude-opus-5-5 for this demo week, unchanged (eval 2026-11-22, run 18 of 20 in
-# docs/eval/commentary-real-model.json). Stored so the demo stays offline and deterministic.
+# A real output of claude-opus-5-5 for this demo week, unchanged (eval v2 2026-11-22, run 8 of 20 in
+# docs/eval/commentary-real-model-v2.json). Stored so the demo stays offline and deterministic.
 DEMO_CLAUDE = (
-    "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). "
-    "Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se "
-    "o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, přehledně: Cosmos {cosmos_kc} "
-    "({cosmos_kusu}), CGTrader {cgtrader_kc} ({cgtrader_kusu}) a Gumroad {gumroad_kc} ({gumroad_kusu}). "
-    "Nejprodávanějším produktem byl {nejprodavanejsi_produkt}."
+    "Příjem {smer_prijmu} o {zmena_procent} proti týdnu předtím. "
+    "Prodeje táhl {nejprodavanejsi_produkt} a z kanálů nejvíc přinesl {nejlepsi_marketplace}."
 )
 
 
