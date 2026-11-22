@@ -13,7 +13,12 @@ def test_demo(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     for marketplace in ("Gumroad", "Cosmos", "Fab", "CGTrader"):
         assert f"--- {marketplace}: ok ---" in out
-    assert "Prodeje 26. 1.:" in out and "TENTO MĚSÍC (LEDEN 2026)" in out
+    assert "Prodeje 26. 1.: 4 nové prodeje, čistě 63,21 USD (≈ 1 295,81 Kč) · týdenní shrnutí" in out
+    assert "- Celkem nové: čistě 63,21 USD (≈ 1 295,81 Kč)" in out  # předmět = tělo
+    assert "TENTO MĚSÍC (LEDEN 2026)" in out
+    assert out.count("Nespárované listingy") == 1  # párování jednou na konci, ne po každém zdroji
+    assert "Proti týdnu předtím příjem klesl o 19 %." in out  # směr dosadil kód
+    assert "Zamítnutý pokus: „Cosmos přinesl {cgtrader_kc}" in out
     assert "(≈ " in out  # částky v Kč (vymyšlený kurz)
     assert "zkušební běh, e-mail se neposlal" in out
     assert os.listdir(tmp_path) == []  # nic nevzniklo v pracovní složce

@@ -94,6 +94,8 @@ class WeeklyConfig:
     writer: Callable[..., str] | None  # Claude (weekly.ClaudeWriter) or None = no commentary
     note_without_writer: str | None = None
     product_name: Callable[[str], str] = lambda key: key
+    show_rejected: bool = False  # demo: also show rejected attempts in the report
+    label: str = "Komentář od Claude"
 
 
 # --- steps -----------------------------------------------------------------------------------
@@ -217,11 +219,15 @@ def _local(moment: datetime | str) -> datetime:
     return moment.astimezone(LOCAL_TZ)
 
 
-def _when(moment: datetime | str, year: int | None = None) -> str:
+DAY_ONLY = {"fab", "cgtrader"}  # their reports give the day, not the time
+
+
+def _when(moment: datetime | str, year: int | None = None, time: bool = True) -> str:
     """'21. 11. 23:57'; with the year when it differs from `year` (the report's year)."""
     local = _local(moment)
     shown_year = f" {local.year}" if year is not None and local.year != year else ""
-    return f"{local.day}. {local.month}.{shown_year} {local:%H:%M}"
+    clock = f" {local:%H:%M}" if time else ""
+    return f"{local.day}. {local.month}.{shown_year}{clock}"
 
 
 def _name(marketplace: str) -> str:
@@ -241,23 +247,37 @@ def _sale_line(row: tuple, czk=None, year: int | None = None, refund: bool = Fal
     if refund:
         quantity, net = abs(quantity), -abs(net)
     haler = czk(net, currency, sold_at) if czk else None
-    label = "vráceno" if refund else "čistě"
-    return (
-        f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – "
-        f"{label} {format_money(net, currency)}{_approx_czk(haler, currency)} ({_when(sold_at, year)})"
-    )
+    when = _when(sold_at, year, time=marketplace not in DAY_ONLY)
+    if net == 0 and not refund:
+        amount = f"zdarma (0,00 {currency})"
+    else:
+        label = "vráceno" if refund else "čistě"
+        amount = f"{label} {format_money(net, currency)}{_approx_czk(haler, currency)}"
+    return f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – {amount} ({when})"
 
 
-def _subject(day: date, sales: list[tuple], failed: list[StepResult]) -> str:
+def _new_totals(sales: list[tuple], czk) -> list[str]:
+    """'čistě 63,21 USD (≈ 1 295,81 Kč)' per currency of the new sales."""
+    by_currency: dict[str, list[int | None]] = {}
+    for _marketplace, _title, _quantity, net, currency, sold_at in sales:
+        values = by_currency.setdefault(currency, [0, 0])
+        values[0] += net
+        haler = (net if currency == fx.HOME else czk(net, currency, sold_at)) if czk else None
+        values[1] = None if haler is None or values[1] is None else values[1] + haler
+    return [
+        f"čistě {format_money(net, currency)}{_approx_czk(haler, currency)}"
+        for currency, (net, haler) in by_currency.items()
+    ]
+
+
+def _subject(day: date, sales: list[tuple], failed: list[StepResult], totals: list[str]) -> str:
     parts = []
     if failed:
         parts.append("⚠ chyba: " + ", ".join(r.step.name for r in failed))
     if sales:
-        units = sum(row[2] for row in sales)
-        currencies = {row[4] for row in sales}
-        text = _plural_sales(units)
-        if len(currencies) == 1:
-            text += f", čistě {format_money(sum(row[3] for row in sales), currencies.pop())}"
+        text = _plural_sales(sum(row[2] for row in sales))
+        if len(totals) == 1:  # same text as the total line in the body
+            text += f", {totals[0]}"
         parts.append(text)
     else:
         parts.append("bez nových prodejů")
@@ -279,7 +299,8 @@ def build_report(
 ) -> Report:
     """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK."""
     failed = [r for r in results if not r.ok]
-    report = Report(_subject(day, sales, failed))
+    totals_new = _new_totals(sales, czk)
+    report = Report(_subject(day, sales, failed, totals_new))
     month_czk = month_czk or {}
     if weekly_section is not None:
         report.subject += " · týdenní shrnutí"
@@ -287,7 +308,9 @@ def build_report(
 
     report.sections.append(Section(
         "Nové prodeje od minulého souhrnu",
-        [_sale_line(row, czk, day.year) for row in sales] or ["Žádné nové prodeje."],
+        [_sale_line(row, czk, day.year) for row in sales]
+        + [f"Celkem nové: {total}" for total in totals_new]
+        or ["Žádné nové prodeje."],
     ))
     if refunds:
         report.sections.append(Section(
@@ -420,11 +443,16 @@ def run_daily(
             else:
                 comment = weekly.commentary(facts, weekly_config.writer)
             weekly_log = comment.log
+            rejected_lines = [
+                f"Zamítnutý pokus: „{text}“ – {'; '.join(problems)}"
+                for text, problems in comment.rejected
+            ] if weekly_config.show_rejected else []
             weekly_section = Section(
                 f"Minulý týden ({facts['obdobi']})",
-                ([comment.text] if comment.text else [])
+                ([f"{weekly_config.label}: {comment.text}"] if comment.text else [])
                 + weekly.fact_lines(facts)
-                + ([comment.note] if comment.note else []),
+                + ([comment.note] if comment.note else [])
+                + rejected_lines,
             )
         report = build_report(
             day=day, results=results, sales=sales, refunds=refunds, month=month, state=state,

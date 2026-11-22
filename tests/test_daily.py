@@ -368,7 +368,7 @@ def test_refund_zaporne_a_rok(env):
     ))], now=NOW + timedelta(days=1))
     text = env.last()[1]
     assert "Cosmos – Chata – 1× – vráceno -10,00 USD (29. 3. 2025 14:30)" in text
-    assert "Fab – Fab chata – 1× – vráceno -8,80 USD (22. 11. 03:00)" in text
+    assert "Fab – Fab chata – 1× – vráceno -8,80 USD (22. 11.)" in text  # Fab má jen den, bez času
 
 
 
@@ -387,13 +387,13 @@ def test_tydenni_sekce_jednou_za_tyden(env):
     subject, text = env.last()
     assert subject.endswith(" · týdenní shrnutí")
     assert text.startswith(
-        "MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- Za týden 9. 11. – 15. 11. 2026 se prodalo 0 kusů.\n"
+        "MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- Komentář od Claude: Za týden 9. 11. – 15. 11. 2026 se prodalo 0 kusů.\n"
         "- Celkem: 0 ks, žádné prodeje"
     )
     monday = NOW + timedelta(days=1)  # 23. 11. → týden 16.–22. 11.
     run_weekly(env, lambda facts, rejected: good, now=monday)
     subject, text = env.last()
-    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Za týden 16. 11. – 22. 11. 2026 se prodalo 1 kus.\n- Celkem: 1 ks" in text
+    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Komentář od Claude: Za týden 16. 11. – 22. 11. 2026 se prodalo 1 kus.\n- Celkem: 1 ks" in text
     run_weekly(env, lambda facts, rejected: good, now=monday + timedelta(days=1))
     assert "týdenní" not in env.last()[0]  # úterý: už odesláno
     assert env.state()["weekly_sent_for"] == "2026-11-16"
@@ -419,3 +419,15 @@ def test_tydenni_neodeslany_se_zopakuje(env):
     env.fail_send = False
     run_weekly(env, None, now=NOW + timedelta(hours=1))
     assert env.last()[0].endswith(" · týdenní shrnutí")
+
+
+def test_celkem_nove_a_predmet_v_kc(env):
+    rates = FakeRates({("2026-11-22", "USD"): Decimal(20)})
+    steps = [daily.Step("cosmos", "Cosmos", env.step(
+        sale("cosmos", "c1", 1000), sale("cosmos", "c2", 250), sale("gumroad", "free", 0, title="Dárek"),
+    ))]
+    run_with_rates(env, steps, rates)
+    subject, text = env.last()
+    assert subject == "Prodeje 22. 11.: 3 nové prodeje, čistě 12,50 USD (≈ 250,00 Kč)"
+    assert "- Celkem nové: čistě 12,50 USD (≈ 250,00 Kč)" in text  # stejné číslo jako v předmětu
+    assert "Gumroad – Dárek – 1× – zdarma (0,00 USD) (22. 11. 03:00)" in text

@@ -13,8 +13,10 @@
   Ranní e-mail přes Resend chodí každý den: nové prodeje, refundy, měsíc v USD i Kč (ČNB), stav zdrojů.
   - V pondělí navíc sekce **„Minulý týden“**. Čísla počítá kód, komentář píše Claude (`claude-opus-5-5`, effort low,
     `fallbacks: "default"`).
-  - Kontrola (`weekly.check`) pustí jen čísla, která jsou v datech. Když neprojde ani napodruhé, jdou jen čísla
-    (rozhodnutí Vítka).
+  - Claude nepíše žádná čísla, jen zástupné značky (`{cosmos_kc}`, `{smer_prijmu}`…), hodnoty dosadí kód.
+    `weekly.check` zamítne číslici, číslovku, vlastní směr změny, neznámou značku i značku u cizího názvu.
+    Když neprojde ani napodruhé, jdou jen čísla (rozhodnutí Vítka). Kontrolu předělanou po nezávislé kontrole
+    2026-11-22 popisuje `AI_CHYBY.md`.
 - `.env`: `GUMROAD_ACCESS_TOKEN`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`, `ANTHROPIC_API_KEY` (všechny vyplněné).
 - `exclude`: Vítkův zkušební nákup z Gumroadu je vyloučený ze součtů.
 - **Demo:** `uv run python -m sales_tracker demo` na vymyšlených datech. Screenshot do README dělá
@@ -22,7 +24,7 @@
 - **CI:** GitHub Actions (pytest + ruff, Windows i Linux), zelené.
 - **Historie gitu přepsaná** bez skutečných hodnot (git-filter-repo, spustil Vítek). Ověřeno strojovým prohledáním
   všech verzí souborů.
-- Testy **311 passed**, ruff čistý (2026-11-22).
+- Testy **322 passed**, ruff čistý (2026-11-22).
 
 ## Co udělat dál
 

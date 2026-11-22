@@ -46,19 +46,24 @@ Cíl: ukázat, jak AI zapojit tak, aby **nevymýšlela čísla**.
   - Oficiální SDK `anthropic`, klíč `ANTHROPIC_API_KEY` v `.env`.
   - Odhad ceny: stovky až nižší tisíce tokenů jednou týdně, tedy **řádově centy za měsíc**.
   - Zapnutý serverový `fallbacks: "default"` (záložní model, když bezpečnostní filtr požadavek odmítne).
-- **Pojistka (kontrola po odpovědi, deterministická, bez AI):**
-  - Z komentáře se vytáhnou všechna čísla (částky, počty, procenta, data).
-  - Každé musí odpovídat hodnotě v datech pro Claude. Toleruje se zápis (`45,90` = `45.90`), procento se smí
-    lišit nejvýš o 1 kvůli zaokrouhlení. Slovní číslovky „jeden“ až „deset“ se kontrolují taky.
-  - Když kontrola neprojde, jednou se zkusí znovu. Když neprojde ani podruhé, e-mail odejde **jen s čísly
-    od kódu** a s poznámkou „komentář neprošel kontrolou“ (rozhodnutí Vítka). Zamítnutý text se zapíše do logu.
+- **Pojistka (změna 2026-11-22 po nezávislé kontrole, viz AI_CHYBY):** první verze jen ověřovala, že číslo z textu
+  *někde v datech existuje*. Prošly tak přehozené hodnoty a vymyšlený směr změny („vzrostly“ při poklesu).
+  Nová verze: **Claude nepíše žádná čísla.**
+  - Kód připraví **zástupné značky** s hodnotami: `{celkem_kc}`, `{cosmos_kusu}`, `{produkt1}`, `{smer_prijmu}`
+    (vzrostl/klesl/zůstal stejný), `{zmena_procent}` (bez znaménka)… Claude dostane jen seznam značek s hodnotou
+    a významem a píše text se značkami.
+  - Kontrola (deterministická) zamítne text, když:
+    - obsahuje číslici nebo číslovku slovem (jeden, dva, žádný, polovina…),
+    - obsahuje vlastní slovo pro směr (vzrostl, klesl, víc, méně, lepší, horší…),
+    - obsahuje neznámou značku,
+    - značka marketplace nebo produktu nemá ve větě před sebou nejblíž svůj název.
+  - Hodnoty dosadí kód. Jeden opakovaný pokus s vypsanými problémy. Když neprojde ani napodruhé, e-mail odejde
+    **jen s čísly od kódu** (rozhodnutí Vítka). Zamítnutý text se zapíše do logu.
   - Chybí klíč, API je nedostupné nebo odmítne → e-mail odejde bez komentáře a s důvodem.
-- **Eval:** testy s podvrženým Claude (bez sítě):
-  - komentář jen se správnými čísly projde,
-  - vymyšlené číslo, přehozená částka, špatný počet nebo procento mimo toleranci neprojdou,
-  - opakovaný pokus funguje,
-  - výpadek API nevadí.
-
+  - Co kontrola neumí: smysl věty bez čísel a přiřazení, když název nestojí před hodnotou. Uvedeno i v README.
+- **Eval:** testy s podvrženým Claude (bez sítě), ručně psané dobré a špatné komentáře, včetně útoků z kontroly:
+  přímo napsané (i správné) číslo, přehozené hodnoty marketplace i produktu, vlastní směr změny, číslovky slovem,
+  neznámá značka. Dál: opakovaný pokus, vzdání, výpadek API.
   Plus sada 10–15 ručně napsaných komentářů (dobrých i špatných) v `tests/`, na kterých se měří kontrola.
   Ostrý běh proti API jednou ručně, s Vítkovým souhlasem (stojí peníze).
 - `run daily --dry-run` týdenní sekci jen vypíše a Claude nevolá. Volat ho bude `--dry-run --with-claude`.

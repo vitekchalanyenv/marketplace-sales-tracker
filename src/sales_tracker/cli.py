@@ -40,6 +40,7 @@ def sync_gumroad(
     sleep: Callable[[float], None] = time.sleep,
     today: date | None = None,
     catalog_path: Path = CATALOG_PATH,
+    match: bool = True,
 ) -> int:
     conn = db.connect(db_path)
     try:
@@ -82,7 +83,8 @@ def sync_gumroad(
         f"Gumroad ({od}): staženo {len(records)}, nových {result.new}, "
         f"aktualizovaných {result.updated}, přeskočeno {len(skipped)}."
     )
-    _match_after_sync(catalog_path, db_path)
+    if match:
+        _match_after_sync(catalog_path, db_path)
     return 0
 
 
@@ -186,6 +188,14 @@ def report_paths(path: Path | None, folder: Path, pattern: str = "*.csv") -> lis
     return sorted(folder.glob(pattern)) if folder.is_dir() else []
 
 
+def match_step(catalog_path: Path, db_path: Path) -> int:
+    """Daily run: match every sale once, after all sources (not after each of them)."""
+    if not Path(catalog_path).exists():
+        print(f"Katalog {catalog_path} neexistuje, prodeje zůstaly nespárované.")
+        return 1
+    return catalog_match(catalog_path, db_path)
+
+
 def _import_reports(
     paths: list[Path],
     db_path: Path,
@@ -194,6 +204,7 @@ def _import_reports(
     parse,
     format_error: type[Exception],
     catalog_path: Path,
+    match: bool = True,
 ) -> int:
     """Import report files one by one; a broken file is reported and the others still import."""
     code = 0
@@ -225,22 +236,26 @@ def _import_reports(
     finally:
         conn.close()
 
-    if imported:
+    if imported and match:
         _match_after_sync(catalog_path, db_path)
     return code
 
 
-def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+def import_fab(
+    paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH, match: bool = True
+) -> int:
     if not paths:
         print(f"Žádný report z Fabu. Ulož CSV do {FAB_DIR}/ nebo zadej cestu k souboru.")
         return 1
     return _import_reports(
         paths, db_path, label="Fab", parse=fab.parse_report, format_error=fab.FabFormatError,
-        catalog_path=catalog_path,
+        catalog_path=catalog_path, match=match,
     )
 
 
-def import_cgtrader(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+def import_cgtrader(
+    paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH, match: bool = True
+) -> int:
     if not paths:
         print(f"Žádný report z CGTraderu. Ulož CSV do {CGTRADER_DIR}/ nebo zadej cestu k souboru.")
         return 1
@@ -259,6 +274,7 @@ def import_cgtrader(paths: list[Path], db_path: Path, *, catalog_path: Path = CA
         parse=cgtrader.parse_report,
         format_error=cgtrader.CgtraderFormatError,
         catalog_path=catalog_path,
+        match=match,
     )
 
 
@@ -269,6 +285,7 @@ def sync_cosmos(
     now: datetime | None = None,
     sleep: Callable[[float], None] = time.sleep,
     catalog_path: Path = CATALOG_PATH,
+    match: bool = True,
 ) -> int:
     """Load Cosmos sales page by page (browser agent, or a fake in tests) and store them."""
     conn = db.connect(db_path)
@@ -313,11 +330,14 @@ def sync_cosmos(
         f"Cosmos (prohlížeč): transakcí {len(records)}, záznamů {len(sales)}, nových {result.new}, "
         f"aktualizovaných {result.updated}, přeskočeno {len(skipped)}."
     )
-    _match_after_sync(catalog_path, db_path)
+    if match:
+        _match_after_sync(catalog_path, db_path)
     return 0
 
 
-def import_cosmos(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+def import_cosmos(
+    paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH, match: bool = True
+) -> int:
     """Pasted copies of the Cosmos sales table (fallback path, spec M4a). Never changes known transactions."""
     if not paths:
         print(f"Žádná ruční kopie z Cosmosu. Ulož text do {COSMOS_DIR}/*.txt nebo zadej cestu k souboru.")
@@ -369,7 +389,7 @@ def import_cosmos(paths: list[Path], db_path: Path, *, catalog_path: Path = CATA
     finally:
         conn.close()
 
-    if imported:
+    if imported and match:
         _match_after_sync(catalog_path, db_path)
     return code
 
@@ -384,11 +404,11 @@ def cosmos_login() -> int:
     return 0 if ok else 1
 
 
-def run_sync_cosmos() -> int:
+def run_sync_cosmos(match: bool = True) -> int:
     from sales_tracker.cosmos_browser import CosmosBrowser
 
     with CosmosBrowser() as browser:
-        return sync_cosmos(DB_PATH, browser.load_page)
+        return sync_cosmos(DB_PATH, browser.load_page, match=match)
 
 
 def exclude_sale(db_path: Path, marketplace: str, external_id: str, reason: str | None) -> int:
@@ -407,14 +427,14 @@ def exclude_sale(db_path: Path, marketplace: str, external_id: str, reason: str 
     return 0
 
 
-def run_sync_gumroad(since: date | None = None) -> int:
+def run_sync_gumroad(since: date | None = None, match: bool = True) -> int:
     # Explicit path: without it python-dotenv searches upwards from this file, not from cwd.
     load_dotenv(Path.cwd() / ".env")
     token = os.environ.get("GUMROAD_ACCESS_TOKEN", "").strip()
     if not token:
         print("Chybí GUMROAD_ACCESS_TOKEN v .env. Zkopíruj .env.example jako .env a doplň token.")
         return 1
-    return sync_gumroad(token, DB_PATH, since=since)
+    return sync_gumroad(token, DB_PATH, since=since, match=match)
 
 
 def run_import_fab_daily() -> int:
@@ -422,7 +442,7 @@ def run_import_fab_daily() -> int:
     if not paths:
         print(f"Žádný report z Fabu v {FAB_DIR}/, přeskakuji.")
         return 0
-    return import_fab(paths, DB_PATH)
+    return import_fab(paths, DB_PATH, match=False)
 
 
 def send_report(report: daily.Report) -> None:
@@ -442,7 +462,7 @@ def run_import_cgtrader_daily() -> int:
     if not paths:
         print(f"Žádný report z CGTraderu v {CGTRADER_DIR}/, přeskakuji.")
         return 0
-    return import_cgtrader(paths, DB_PATH)
+    return import_cgtrader(paths, DB_PATH, match=False)
 
 
 def weekly_config(dry_run: bool, with_claude: bool) -> daily.WeeklyConfig:
@@ -472,10 +492,11 @@ def weekly_config(dry_run: bool, with_claude: bool) -> daily.WeeklyConfig:
 
 def run_daily(dry_run: bool = False, with_claude: bool = False) -> int:
     steps = [
-        daily.Step("gumroad", "Gumroad", run_sync_gumroad),
-        daily.Step("cosmos", "Cosmos", run_sync_cosmos),
+        daily.Step("gumroad", "Gumroad", lambda: run_sync_gumroad(match=False)),
+        daily.Step("cosmos", "Cosmos", lambda: run_sync_cosmos(match=False)),
         daily.Step("fab", "Fab", run_import_fab_daily),
         daily.Step("cgtrader", "CGTrader", run_import_cgtrader_daily),
+        daily.Step("catalog", "Párování s katalogem", lambda: match_step(CATALOG_PATH, DB_PATH)),
     ]
     return daily.run_daily(
         steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,

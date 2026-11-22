@@ -349,6 +349,7 @@ class Commentary:
     text: str | None  # with the values filled in; None = not used
     note: str | None  # shown instead of / next to the text
     log: list[str]
+    rejected: tuple[tuple[str, tuple[str, ...]], ...] = ()  # (text, problems) of rejected attempts
 
 
 def commentary(facts: dict[str, Any], writer: Callable[..., str] | None) -> Commentary:
@@ -357,14 +358,18 @@ def commentary(facts: dict[str, Any], writer: Callable[..., str] | None) -> Comm
         return Commentary(None, None, [])
     available = slots(facts)
     log: list[str] = []
+    attempts: list[tuple[str, tuple[str, ...]]] = []
     rejected: list[str] | None = None
     for attempt in (1, 2):
         try:
             text = writer(available, rejected)
         except CommentaryError as exc:
-            return Commentary(None, f"Komentář Claude chybí: {exc}.", log)
+            return Commentary(None, f"Komentář Claude chybí: {exc}.", log, tuple(attempts))
         rejected = check(text, available)
         if not rejected:
-            return Commentary(render(text, available), None, log)
+            return Commentary(render(text, available), None, log, tuple(attempts))
+        attempts.append((text, tuple(rejected)))
         log.append(f"pokus {attempt}: komentář neprošel kontrolou ({'; '.join(rejected)}): {text}")
-    return Commentary(None, "Komentář Claude neprošel kontrolou čísel, posílám jen čísla.", log)
+    return Commentary(
+        None, "Komentář Claude neprošel kontrolou čísel, posílám jen čísla.", log, tuple(attempts)
+    )
