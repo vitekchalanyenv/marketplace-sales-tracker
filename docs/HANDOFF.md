@@ -1,47 +1,62 @@
 # Předání
 
-**Relace:** 2026-11-21 (M4: průzkum Cosmos + CGTrader, agent pro Cosmos)
+**Relace:** 2026-11-21 až 22 (M4 dokončení, M5 denní agent, M5b týdenní shrnutí/měny/demo, úklid dat, README)
 
 ## Kde jsme
 
-- **M1 Gumroad ✅, M2 Katalog ✅, M3 Fab ✅** (viz `docs/PROGRESS.md`).
-- **M4a Cosmos – agent v prohlížeči hotový:** `sync cosmos` (Playwright + nainstalovaný Chrome, vlastní profil
-  `data/private/browser/cosmos/`, headless). Zachytí JSON, který si stránka Sales sama načte z
-  `api.publisher.leartesstudios.com/sales`; token ani heslo neprochází kódem. Ověřeno na skutečném účtu:
-  všechny transakce, tržba i payout sedí na cent, druhý běh 0 nových a zastaví na 1. stránce.
-  - Jádro `src/sales_tracker/cosmos.py` (validace, dělení payoutu podle zaplacených částek, stránkování),
-    tenká vrstva `cosmos_browser.py`, pokus `spikes/cosmos_playwright.py`.
-  - Přihlášení: `sync cosmos --login` (Vítek sám, reCAPTCHA).
-- **M4b CGTrader:** průzkum hotový (`docs/ZDROJE.md`). Report z My Sales chodí **e-mailem**; Vítek ho nahraje.
-  O API požádáno, čeká se.
-- DB: všechny záznamy spárované s katalogem.
-- Testy **196 passed**, `ruff check` čistý (2026-11-21).
+- **M1–M5 hotové** (podrobně `docs/PROGRESS.md`). Zdroje:
+  - Gumroad: API.
+  - Cosmos: agent v prohlížeči, záložně ruční kopie.
+  - Fab: CSV.
+  - CGTrader: CSV z e-mailu; API čeká na schválení.
+- **Denní agent:** Plánovač úloh `marketplace-sales-tracker`, denně 8:00, běží `pythonw -m sales_tracker run daily`.
+  Ranní e-mail přes Resend chodí každý den: nové prodeje, refundy, měsíc v USD i Kč (ČNB), stav zdrojů.
+  - V pondělí navíc sekce **„Minulý týden“**. Čísla počítá kód, komentář píše Claude (`claude-opus-5-5`, effort low,
+    `fallbacks: "default"`).
+  - Kontrola (`weekly.check`) pustí jen čísla, která jsou v datech. Když neprojde ani napodruhé, jdou jen čísla
+    (rozhodnutí Vítka).
+- `.env`: `GUMROAD_ACCESS_TOKEN`, `RESEND_API_KEY`, `REPORT_EMAIL_TO`, `ANTHROPIC_API_KEY` (všechny vyplněné).
+- `exclude`: Vítkův zkušební nákup z Gumroadu je vyloučený ze součtů.
+- **Demo:** `uv run python -m sales_tracker demo` na vymyšlených datech. Screenshot do README dělá
+  `scripts/demo_screenshot.py`.
+- **CI:** GitHub Actions (pytest + ruff, Windows i Linux), zelené.
+- **Historie gitu přepsaná** bez skutečných hodnot (git-filter-repo, spustil Vítek). Ověřeno strojovým prohledáním
+  všech verzí souborů.
+- Testy **311 passed**, ruff čistý (2026-11-22).
 
 ## Co udělat dál
 
-1. **Ruční kopie Cosmosu** (cesta 2): až Vítek uloží `data/private/cosmos/vzorek.txt`, napsat parser `from_paste`
-   podle skutečného vzorku; multi-produktové transakce dělit podle `price` z katalogu (katalog `price` ještě neumí).
-2. **CGTrader (M4b):** až bude report z e-mailu v `data/private/cgtrader/`, prozkoumat formát a napsat spec + import.
-3. **M5 – denní agent** (požadavek Vítka): každý den sám spustí `sync gumroad`, `sync cosmos` a importy nových
-   souborů a **dá vědět, když něco selže** (hlavně vypršené přihlášení Cosmosu). Nejdřív spec a otázky:
-   jak notifikovat, kdy běžet, co když je počítač vypnutý; souvisí s týdenním shrnutím.
+1. **Zkontrolovat první pondělní e-mail** (23. 11.) a týdenní komentář. Při potížích je detail
+   v `data/private/logs/daily_2026-11-23.log`, kam se zapisuje i zamítnutý komentář.
+2. **CGTrader API**, až ho schválí: spec a stahování. Nahradí ruční reporty a doplní starší měsíce.
+3. **M6 přehled** (dashboard: celkem / marketplace / produkt / v čase). Nejdřív spec.
+4. **Další sekce ranního e-mailu** (wishlisty apod.). Souhrn je seznam `Section`, takže se snadno rozšiřuje.
+5. **M7 portfolio:** README je hotové. Zbývá video a případně krátký write-up o kontrole čísel.
 
-## Otevřené otázky pro Vítka
+## Otevřené otázky / neověřeno
 
-- M5: kanál upozornění (notifikace Windows / e-mail / jiné), čas běhu.
-- Měny pro týdenní shrnutí (USD, nebo CZK?) a zdroj kurzů.
-- Refund na Cosmosu: zatím žádný nebyl → formát `refund_details` neznámý (agent ho uloží jako refund a upozorní).
+- E-mail při vypršeném přihlášení do Cosmosu a doběhnutí zmeškaného běhu po zapnutí PC zatím nikdo neviděl ostře.
+- Cosmos: formát refundu neznámý a nevíme, jak dlouho vydrží přihlášení.
+- README je psané Vítkovým hlasem. Vítek ho má přečíst a potvrdit.
 
 ## Pozor
 
 - HTTPS jen přes úložiště certifikátů Windows: Python `ssl.create_default_context()`, git `schannel`,
   `uv add --system-certs`.
-- Do veřejného repa (spec, ZDROJE) **jen formát a vymyšlené příklady**, nikdy skutečné řádky, částky ani časy prodejů.
-- Testy nikdy nesahají na `data/private/` ani na síť / prohlížeč.
-- Na tvrzení „X neexistuje“ (např. API) sledovat celou síť po načtení stránky, ne jen jednu doménu.
-- Ruční requesty s Vítkovým tokenem z prohlížeče jsou v tomto prostředí blokované – a správně; Cosmos jen přes
-  Playwright profil, kde přihlášení drží prohlížeč.
-- V heredocu s Pythonem pozor na `\n` / `\b`; víceřádkové úpravy kódu raději nástrojem Edit.
+- **Do repa nikdy skutečné hodnoty**, ani „upravené“: částky, ID, slugy, názvy produktů, časy ani počty prodejů.
+  Ukázky jen vymyšlené (`data/sample/`). Před commitem dělat grep diffu. Klasifikátor commit s únikem zastaví.
+- Testy nikdy nesahají na `data/private/`, síť, prohlížeč ani skutečné API (Claude, Resend, ČNB jsou podvržené).
+- Ostré volání Claude stojí peníze. Spouštět jen s vědomím Vítka (`run daily --dry-run --with-claude`).
+- Kurz ČNB na dnešek se neukládá do mezipaměti, protože vychází až odpoledne.
+- Mazání souborů mimo repo (např. ve Stažených) je v tomto prostředí blokované, takže to nechat na Vítkovi.
+- Přepis historie a force-push dělá Vítek sám, agent je zablokovaný.
+- V heredocu s Pythonem pozor na `\n`; víceřádkové úpravy dělat raději nástrojem Edit.
+
+## Úklid u Vítka
+
+- Smazat zálohu repa před přepisem (scratchpad `backup-before-rewrite.git`) a `data/private/history-replacements.txt`.
+  V obou jsou ještě skutečné hodnoty.
+- Smazat dvě kopie `sales_report.csv` ve Stažených.
 
 ## Jak pracovat
 

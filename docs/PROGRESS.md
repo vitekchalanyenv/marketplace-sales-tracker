@@ -15,39 +15,37 @@
   součty `Net Sales` / `Net Units` sedí s CSV, druhý import 0 nových, všechny řádky spárovány s katalogem.
   Do modelu přibylo `quantity`.
 
+- 2026-11-21/22 – M4a Cosmos: **agent v prohlížeči** `sync cosmos` (Playwright, vlastní profil, headless, zachytí
+  JSON z API stránky). Testy prošly, **ověřeno na skutečném účtu**: všechny transakce, tržba i payout sedí na cent,
+  druhý běh 0 nových (zastaví na 1. stránce). **Ruční kopie** `import cosmos` (záložní cesta), ověřeno na skutečném
+  vzorku: transakce stejné jako z API (čas na minutu, částky na cent), jen odhad dělení u transakce se dvěma produkty
+  ±2 ¢ (součet přesný); data z agenta nepřepíše.
+- 2026-11-22 – M4b CGTrader: `import cgtrader` (CSV report z e-mailu, bez kupujícího a země; report stažení se
+  přeskočí). **Ověřeno na skutečném reportu**: částky sedí s CSV, druhý import 0 nových, spárováno.
+- 2026-11-22 – M5 denní agent: `run daily` (všechny zdroje, každý krok zvlášť, log v `data/private/logs/`), úloha
+  v Plánovači (`scripts/install_task.ps1`, denně 8:00, zmeškaný běh po zapnutí PC). **Ranní souhrn e-mailem přes
+  Resend každý den** (nové prodeje, refundy, měsíc, stav zdrojů). **Ověřeno:** e-mail dorazil do Vítkovy schránky,
+  běh přes Plánovač bez okna konzole. Notifikace Windows (první verze) nepřišla, nahrazena e-mailem.
+- 2026-11-22 – M5b (spec `docs/spec/M5b-tyden-meny-demo.md`): **týdenní shrnutí** v pondělním e-mailu (čísla od kódu,
+  komentář Claude, deterministická kontrola čísel + eval v `tests/test_weekly.py`), **částky v Kč** kurzem ČNB ke dni
+  prodeje, `exclude` pro zkušební prodeje, `demo` na vymyšlených datech, **CI** (GitHub Actions, Windows + Linux),
+  README pro čtenáře. Testy prošly (311). **Ověřeno:** Kč sedí s ručním přepočtem; komentář Claude ze skutečného API
+  (`--dry-run --with-claude`) prošel kontrolou napoprvé.
+
 ## Rozpracováno
 
-- M4a – Cosmos: **agent v prohlížeči hotový** – `sync cosmos` (Playwright, vlastní profil, headless, zachytí JSON
-  z API stránky). Napsáno, testy prošly (196), **ověřeno na skutečném účtu** 2026-11-21: všechny transakce,
-  tržba i payout sedí na cent, druhý běh 0 nových (zastaví na 1. stránce), vše spárováno.
-  **Ruční kopie** (`import cosmos`, záložní cesta): napsáno, testy prošly (264), **ověřeno na skutečném vzorku**
-  2026-11-22: všechny transakce stejné jako z API (čas na minutu, částky na cent); jediný rozdíl je odhad dělení
-  u transakce se dvěma produkty (±2 ¢, součet přesný). Data z agenta ruční kopie nepřepíše (ověřeno: všechny „už v DB“).
-  Zbývá: refund (formát `refund_details` neznámý), jak dlouho vydrží přihlášení.
-- M5 – denní agent: `run daily` (Gumroad, Cosmos, Fab; každý krok zvlášť, log v `data/private/logs/`)
-  a úloha v Plánovači (`scripts/install_task.ps1`, denně 8:00, po zapnutí doběhne zmeškaný běh).
-  **Ranní souhrn e-mailem přes Resend, každý den** (nové prodeje po kusech, refundy, součty za měsíc, stav zdrojů).
-  Napsáno, testy prošly (222). Na skutečných datech ověřeno: `run daily --dry-run` (měsíční součty sedí s DB)
-  a běh přes Plánovač bez okna konzole (ještě ve verzi s notifikací). **Ostré odeslání 2026-11-22:** Resend
-  e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil a Vítek
-  potvrdil, že e-mail dorazil do schránky. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
-  Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem.
-- M5b – týdenní shrnutí, měny, zkušební prodeje, demo (spec `docs/spec/M5b-tyden-meny-demo.md`). Napsáno, testy
-  prošly (311). Pondělní sekce „Minulý týden“: čísla počítá kód, komentář píše Claude a deterministická kontrola
-  ověří každé číslo (eval: ručně psané dobré a špatné komentáře v `tests/test_weekly.py`). Částky v Kč kurzem ČNB.
-  `exclude` pro zkušební prodeje. `demo` na vymyšlených datech. CI (GitHub Actions) běží a prochází.
-  **Ověřeno ostře 2026-11-22** (`--dry-run --with-claude`, skutečné API, `claude-opus-5-5`): komentář prošel kontrolou
-  čísel napoprvé, nic se neodeslalo. Neověřeno: první skutečný pondělní e-mail.
-- M4b – CGTrader: `import cgtrader [soubor]` (CSV report z e-mailu, bez kupujícího a země). Napsáno, testy prošly
-  (238), **ověřeno na skutečném reportu** 2026-11-22: částky sedí s CSV, druhý import 0 nových,
-  spárováno s katalogem. Zapojeno do denního agenta. Starší měsíce se doplní až přes API (požádáno 2026-11-21), ručně je nestahujeme.
+- M4b CGTrader přes API: čeká se na schválení přístupu (požádáno 2026-11-21). Starší měsíce se doplní až přes API.
 
 ## Čeká na Vítka
 
-- CGTrader API: čeká se na schválení od CGTraderu.
+- Nic. Přečíst README (psané jeho hlasem) a potvrdit, že sedí.
 
-## Otevřené otázky
+## Otevřené otázky / neověřeno
 
+- První skutečný pondělní e-mail s týdenním shrnutím (23. 11. 2026).
+- Ranní e-mail při vypršeném přihlášení do Cosmosu; doběhnutí zmeškaného běhu po zapnutí PC.
+- Cosmos: formát refundu (`refund_details`) – zatím žádný nebyl; jak dlouho vydrží přihlášení.
+- Další sekce souhrnu (wishlisty), M6 přehled (dashboard), M7 portfolio.
 
 ## Známé problémy
 
