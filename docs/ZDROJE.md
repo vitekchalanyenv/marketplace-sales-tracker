@@ -104,7 +104,7 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
   - Tabulka „Latest Sales“: `Transaction ID` (`#` + číslo), `Products`, `Amount`, `Payout`, `Date`.
   - **Jedna transakce může obsahovat víc produktů** (víc štítků v buňce Products). `Amount` a `Payout` jsou ale jen
     za celou transakci → rozpočítání na produkty z tabulky nejde.
-  - U produktu je název **a slug** (např. `sample-medieval-village`). Názvy na Cosmosu se můžou lišit od Fabu
+  - U produktu je název **a slug** (např. `sample-medieval-village`, vymyšlený příklad). Názvy na Cosmosu se můžou lišit od Fabu
     (u jednoho produktu je navíc „Environment“) → v katalogu párovat podle **slugu** (`ref`).
   - `Amount` / `Payout` jako `"<číslo> USD"`. Výjimka: prodej za **Virtual Credits** – `Amount` bez měny, `Payout`
     = text `Virtual Credits` (bez částky v USD).

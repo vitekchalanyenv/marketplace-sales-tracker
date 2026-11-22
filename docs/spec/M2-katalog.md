@@ -113,15 +113,8 @@ počítá s YAML a ten se ručně píše pohodlněji.
 1. **Produkt = 1 listing na marketplace.** Verze (UE / Unity / FBX) se neprodávají zvlášť. Katalog přesto dovolí
    víc listingů na jednom marketplace (pro případ přejmenování listingu), ale běžně bude jeden.
 2. **Balíček** (na Fabu je jeden) = samostatný produkt v katalogu. Rozpočítání na jednotlivé produkty se nedělá.
-3. **Seznam produktů** (podle Vítka):
-
-| Produkt | Fab | Cosmos | CGTrader | Gumroad |
-|---|---|---|---|---|
-| Produkt A | ✔ | ✔ | | |
-| Produkt B | ✔ | ✔ | ✔ | |
-| Produkt C | ✔ | ✔ | ✔ | ✔ (ověřeno přes API) |
-| Bundle (A + B + C) | ✔ | | | |
-| Produkt D | | | ✔ | |
+3. **Seznam produktů** (podle Vítka): pět produktů. Většina je na několika marketplaces, jeden bundle je jen
+   na Fabu a jeden produkt jen na CGTraderu. Názvy produktů i listingů jsou jen v `data/private/katalog.yaml`.
 
 Přesné názvy listingů jsou jen v `data/private/katalog.yaml`. Fab, Cosmos a CGTrader jsou zatím zapsané
 **podle názvu od Vítka** (ID/slugy doplníme, až budou skutečná data v M3/M4); skutečné názvy v reportech se můžou
