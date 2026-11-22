@@ -12,7 +12,7 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import cgtrader, cosmos, daily, db, emailer, fab, gumroad
+from sales_tracker import cgtrader, cosmos, daily, db, emailer, fab, fx, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
@@ -455,6 +455,7 @@ def run_daily(dry_run: bool = False) -> int:
     return daily.run_daily(
         steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,
         send=None if dry_run else send_report, now=datetime.now(UTC),
+        make_rates=lambda conn, today: fx.Rates(conn, today),
     )
 
 

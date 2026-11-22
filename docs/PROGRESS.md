@@ -41,8 +41,6 @@
 
 ## Otevřené otázky
 
-- Měny napříč marketplaces: do jaké měny převádět pro týdenní shrnutí (USD? CZK, protože výplaty z Gumroadu jdou v CZK?)
-  a odkud brát kurzy (např. ČNB)? Rozhodnout před milníkem se shrnutím.
 
 ## Známé problémy
 
@@ -51,6 +49,8 @@
 
 ## Rozhodnutí
 
+- 2026-11-22 – Měny: ukládá se původní měna, součty se převádí na Kč kurzem ČNB ke dni prodeje (spec M5b).
+  Ověřeno na skutečných datech: částky v Kč sedí s ručním přepočtem kurzy ČNB.
 - 2026-11-22 – Zkušební nákup z Gumroadu označen `exclude` (nepočítá se do součtů, v DB zůstává).
 
 - 2026-11-22 – Historie gitu přepsána (git-filter-repo, spustil Vítek), aby v ní nebyly skutečné hodnoty z prodejů a katalogu.

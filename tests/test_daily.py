@@ -2,6 +2,7 @@
 
 import json
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 
@@ -307,3 +308,46 @@ def test_cli_exclude(tmp_path, monkeypatch, capsys):
     assert cli.main(["exclude", "gumroad", "neni", "--reason", "x"]) == 1
     with pytest.raises(SystemExit):
         cli.main(["exclude", "gumroad", "g1"])  # chybí --reason i --undo
+
+
+class FakeRates:
+    def __init__(self, rates, error=None):
+        self.rates, self.error = rates, error
+
+    def rate(self, day, currency):
+        if currency == "CZK":
+            return Decimal(1)
+        return self.rates.get((day.isoformat(), currency))
+
+
+def run_with_rates(env, steps, rates):
+    return daily.run_daily(
+        steps, db_path=env.db, state_path=env.tmp / "state.json", log_dir=env.tmp / "logs",
+        send=env.send, now=NOW, make_rates=lambda conn, today: rates,
+    )
+
+
+def test_castky_v_korunach(env):
+    rates = FakeRates({("2026-11-22", "USD"): Decimal(20), ("2026-11-21", "USD"): Decimal(25),
+                       ("2026-11-22", "EUR"): Decimal(25)})
+    steps = [daily.Step("cosmos", "Cosmos", env.step(
+        sale("cosmos", "c1", 1000),  # 22. 11. 03:00 v Praze
+        sale("cosmos", "c2", 1000, sold_at=datetime(2026, 11, 21, 10, 0, tzinfo=UTC)),
+        sale("fab", "f1", 400, currency="EUR"),
+        sale("gumroad", "g1", 5000, currency="CZK"),
+    ))]
+    run_with_rates(env, steps, rates)
+    text = env.last()[1]
+    assert "Cosmos – Vymyšlený produkt – 1× – čistě 10,00 USD (≈ 200,00 Kč) (22. 11. 03:00)" in text
+    assert "Cosmos: 2 ks, čistě 20,00 USD (≈ 450,00 Kč)" in text  # každý prodej kurzem svého dne
+    assert "Gumroad: 1 ks, čistě 50,00 CZK" in text and "50,00 CZK (≈" not in text
+    assert "Celkem ve všech měnách: ≈ 600,00 Kč" in text  # 450 (USD) + 100 (4 EUR × 25) + 50 (CZK)
+
+
+def test_kurz_nedostupny(env):
+    rates = FakeRates({}, error="ČNB není dostupná (ConnectError)")
+    run_with_rates(env, [daily.Step("cosmos", "Cosmos", env.step(sale("cosmos", "c1", 1000)))], rates)
+    text = env.last()[1]
+    assert "čistě 10,00 USD (22. 11. 03:00)" in text  # bez Kč, ale prodej tam je
+    assert "Kurz ČNB: nedostupný (ČNB není dostupná (ConnectError)), částky v Kč chybí" in text
+    assert "Celkem ve všech měnách" not in text

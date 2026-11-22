@@ -19,7 +19,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from sales_tracker import db
+from sales_tracker import db, fx
 
 WATCHED = ("gumroad", "cosmos")  # automatic sources; Fab is uploaded by hand
 STALE_DAYS = 3
@@ -154,6 +154,32 @@ def month_totals(conn: sqlite3.Connection, today: date) -> list[tuple[str, str, 
     ).fetchall()
 
 
+def month_rows(conn: sqlite3.Connection, today: date) -> list[tuple[str, str, int, str]]:
+    """(currency, marketplace, net cents, sold_at) of the rows month_totals sums, for CZK conversion."""
+    start = datetime(today.year, today.month, 1, tzinfo=LOCAL_TZ)
+    end = datetime(today.year + today.month // 12, today.month % 12 + 1, 1, tzinfo=LOCAL_TZ)
+    return conn.execute(
+        "SELECT currency, marketplace, net_cents, sold_at FROM sales "
+        "WHERE sold_at >= ? AND sold_at < ? AND (status = 'sold' OR quantity < 0) AND excluded = 0",
+        (_utc_text(start), _utc_text(end)),
+    ).fetchall()
+
+
+class CzkConverter:
+    """Net cents in a sale's currency → haléře at the ČNB rate of the sale's local day (fx.Rates)."""
+
+    def __init__(self, rates):
+        self.rates = rates
+
+    def __call__(self, cents: int, currency: str, sold_at: str) -> int | None:
+        rate = self.rates.rate(_local(sold_at).date(), currency)
+        return None if rate is None else fx.to_czk(cents, rate)
+
+    @property
+    def error(self) -> str | None:
+        return self.rates.error
+
+
 def _utc_text(moment: datetime) -> str:
     return moment.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -191,11 +217,18 @@ def _name(marketplace: str) -> str:
     return MARKETPLACE_NAMES.get(marketplace, marketplace)
 
 
-def _sale_line(row: tuple) -> str:
+def _approx_czk(haler: int | None, currency: str) -> str:
+    if haler is None or currency == fx.HOME:
+        return ""
+    return f" (≈ {format_money(haler, 'Kč')})"
+
+
+def _sale_line(row: tuple, czk=None) -> str:
     marketplace, title, quantity, net, currency, sold_at = row
+    haler = czk(net, currency, sold_at) if czk else None
     return (
         f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – "
-        f"čistě {format_money(net, currency)} ({_when(sold_at)})"
+        f"čistě {format_money(net, currency)}{_approx_czk(haler, currency)} ({_when(sold_at)})"
     )
 
 
@@ -224,24 +257,40 @@ def build_report(
     month: list[tuple[str, str, int, int]],
     state: dict,
     now: datetime,
+    czk=None,
+    month_czk: dict[tuple[str, str], int | None] | None = None,
 ) -> Report:
+    """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK."""
     failed = [r for r in results if not r.ok]
     report = Report(_subject(day, sales, failed))
+    month_czk = month_czk or {}
 
     report.sections.append(Section(
         "Nové prodeje od minulého souhrnu",
-        [_sale_line(row) for row in sales] or ["Žádné nové prodeje."],
+        [_sale_line(row, czk) for row in sales] or ["Žádné nové prodeje."],
     ))
     if refunds:
-        report.sections.append(Section("Refundy", [_sale_line(row) for row in refunds]))
+        report.sections.append(Section("Refundy", [_sale_line(row, czk) for row in refunds]))
 
     month_lines = []
     totals: dict[str, int] = {}
+    totals_czk: dict[str, int | None] = {}
     for currency, marketplace, units, net in month:
-        month_lines.append(f"{_name(marketplace)}: {units} ks, čistě {format_money(net, currency)}")
+        haler = month_czk.get((currency, marketplace))
+        month_lines.append(
+            f"{_name(marketplace)}: {units} ks, čistě {format_money(net, currency)}"
+            f"{_approx_czk(haler, currency)}"
+        )
         totals[currency] = totals.get(currency, 0) + net
+        previous = totals_czk.get(currency, 0)
+        totals_czk[currency] = None if haler is None or previous is None else previous + haler
     for currency, net in totals.items():
-        month_lines.append(f"Celkem: čistě {format_money(net, currency)}")
+        month_lines.append(
+            f"Celkem: čistě {format_money(net, currency)}{_approx_czk(totals_czk[currency], currency)}"
+        )
+    if len(totals) > 1 and all(totals_czk.get(c) is not None or c == fx.HOME for c in totals):
+        overall = sum(totals[c] if c == fx.HOME else totals_czk[c] for c in totals)
+        month_lines.append(f"Celkem ve všech měnách: ≈ {format_money(overall, 'Kč')}")
     report.sections.append(Section(
         f"Tento měsíc ({MONTHS[day.month - 1]} {day.year})",
         month_lines or ["Zatím žádné prodeje."],
@@ -261,6 +310,8 @@ def build_report(
             else:
                 line += f" (naposledy staženo {_when(last)})"
         status_lines.append(line)
+    if czk is not None and czk.error:
+        status_lines.append(f"Kurz ČNB: nedostupný ({czk.error}), částky v Kč chybí")
     report.sections.append(Section("Stav zdrojů", status_lines))
     return report
 
@@ -308,7 +359,9 @@ def run_daily(
     log_dir: Path,
     send: Send | None,
     now: datetime,
+    make_rates=None,
 ) -> int:
+    """make_rates(conn, today) -> fx.Rates for CZK amounts; None = amounts in original currency only."""
     """Run all steps and send the report. send=None is a dry run: print only, change no state."""
     state = _load_state(state_path)
     conn = db.connect(db_path)
@@ -326,12 +379,21 @@ def run_daily(
         refunds = new_refunds(conn, since)
         month = month_totals(conn, day)
         after = snapshot(conn)
+        czk = CzkConverter(make_rates(conn, day)) if make_rates else None
+        month_czk: dict[tuple[str, str], int | None] = {}
+        if czk is not None:
+            for currency, marketplace, net, sold_at in month_rows(conn, day):
+                key = (currency, marketplace)
+                haler = czk(net, currency, sold_at)
+                previous = month_czk.get(key, 0)
+                month_czk[key] = None if haler is None or previous is None else previous + haler
+        report = build_report(
+            day=day, results=results, sales=sales, refunds=refunds, month=month, state=state,
+            now=now, czk=czk, month_czk=month_czk,
+        )
     finally:
         conn.close()
 
-    report = build_report(
-        day=day, results=results, sales=sales, refunds=refunds, month=month, state=state, now=now,
-    )
 
     log = [f"=== {now.isoformat()} ==="]
     for result in results:
