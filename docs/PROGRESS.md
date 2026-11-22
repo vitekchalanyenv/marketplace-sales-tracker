@@ -25,16 +25,15 @@
   a úloha v Plánovači (`scripts/install_task.ps1`, denně 8:00, po zapnutí doběhne zmeškaný běh).
   **Ranní souhrn e-mailem přes Resend, každý den** (nové prodeje po kusech, refundy, součty za měsíc, stav zdrojů).
   Napsáno, testy prošly (222). Na skutečných datech ověřeno: `run daily --dry-run` (měsíční součty sedí s DB)
-  a běh přes Plánovač bez okna konzole (ještě ve verzi s notifikací). **Neověřeno:** skutečné odeslání e-mailu,
-  protože čeká na Vítkův účet na Resendu. Dál neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
+  a běh přes Plánovač bez okna konzole (ještě ve verzi s notifikací). **Ostré odeslání 2026-11-22:** Resend
+  e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil. Že e-mail
+  opravdu dorazil do schránky, potvrdí Vítek. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
   Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem. Týdenní shrnutí zbývá.
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
 
 ## Čeká na Vítka
 
-- M5: založit účet na resend.com, vytvořit API klíč, do `.env` doplnit `RESEND_API_KEY` a `REPORT_EMAIL_TO`
-  (e-mail účtu Resend).
 - M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
 - M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
 
