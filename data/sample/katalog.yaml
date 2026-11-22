@@ -11,6 +11,8 @@ products:
         - title: "Medieval Village (old listing)"
       cosmos:
         - ref: sample-medieval-village
+      cgtrader:
+        - ref: "9000001"
 
   - key: scifi-hangar
     name: Sci-Fi Hangar Environment
@@ -21,3 +23,5 @@ products:
         - title: "Sci-Fi Hangar Environment"
       cosmos:
         - ref: sample-scifi-hangar
+      cgtrader:
+        - title: "Sample Scifi Hangar"

@@ -1,4 +1,4 @@
-"""Command line: sync gumroad|cosmos, import fab, catalog check|match, run daily (see README)."""
+"""Command line: sync gumroad|cosmos, import fab|cgtrader, catalog check|match, run daily (see README)."""
 
 import argparse
 import json
@@ -12,11 +12,12 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import cosmos, daily, db, emailer, fab, gumroad
+from sales_tracker import cgtrader, cosmos, daily, db, emailer, fab, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
 FAB_DIR = Path("data/private/fab")
+CGTRADER_DIR = Path("data/private/cgtrader")
 STATE_PATH = Path("data/private/agent_state.json")
 LOG_DIR = Path("data/private/logs")
 REFUND_WINDOW_DAYS = 30
@@ -177,42 +178,47 @@ def _match_after_sync(catalog_path: Path, db_path: Path) -> None:
     catalog_match(catalog_path, db_path)
 
 
-def fab_report_paths(path: Path | None, folder: Path) -> list[Path]:
+def report_paths(path: Path | None, folder: Path) -> list[Path]:
     """The given file, or every *.csv in the folder (alphabetical: older periods first)."""
     if path is not None:
         return [path]
     return sorted(folder.glob("*.csv")) if folder.is_dir() else []
 
 
-def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
-    if not paths:
-        print(f"Žádný report z Fabu. Ulož CSV do {FAB_DIR}/ nebo zadej cestu k souboru.")
-        return 1
-
+def _import_reports(
+    paths: list[Path],
+    db_path: Path,
+    *,
+    label: str,
+    parse,
+    format_error: type[Exception],
+    catalog_path: Path,
+) -> int:
+    """Import report files one by one; a broken file is reported and the others still import."""
     code = 0
     imported = False
     conn = db.connect(db_path)
     try:
         for path in paths:
             try:
-                report = fab.parse_report(path)
+                report = parse(path)
             except FileNotFoundError:
                 print(f"Soubor {path} neexistuje.")
                 code = 1
                 continue
-            except fab.FabFormatError as exc:
+            except format_error as exc:
                 print(f"{path.name}: {exc}. Nic se z něj neuložilo.")
                 code = 1
                 continue
 
             for skipped in report.skipped:
                 print(f"Přeskočeno: {path.name}, řádek {skipped.line} – {skipped.reason}")
-            for warning in report.warnings:
+            for warning in getattr(report, "warnings", []):
                 print(f"Upozornění: {path.name}, {warning}")
             result = db.upsert_sales(conn, report.sales)
             imported = True
             print(
-                f"Fab ({path.name}): řádků {report.rows}, nových {result.new}, "
+                f"{label} ({path.name}): řádků {report.rows}, nových {result.new}, "
                 f"aktualizovaných {result.updated}, přeskočeno {len(report.skipped)}."
             )
     finally:
@@ -221,6 +227,26 @@ def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG
     if imported:
         _match_after_sync(catalog_path, db_path)
     return code
+
+
+def import_fab(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+    if not paths:
+        print(f"Žádný report z Fabu. Ulož CSV do {FAB_DIR}/ nebo zadej cestu k souboru.")
+        return 1
+    return _import_reports(
+        paths, db_path, label="Fab", parse=fab.parse_report, format_error=fab.FabFormatError,
+        catalog_path=catalog_path,
+    )
+
+
+def import_cgtrader(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+    if not paths:
+        print(f"Žádný report z CGTraderu. Ulož CSV do {CGTRADER_DIR}/ nebo zadej cestu k souboru.")
+        return 1
+    return _import_reports(
+        paths, db_path, label="CGTrader", parse=cgtrader.parse_report,
+        format_error=cgtrader.CgtraderFormatError, catalog_path=catalog_path,
+    )
 
 
 def sync_cosmos(
@@ -306,7 +332,7 @@ def run_sync_gumroad(since: date | None = None) -> int:
 
 
 def run_import_fab_daily() -> int:
-    paths = fab_report_paths(None, FAB_DIR)
+    paths = report_paths(None, FAB_DIR)
     if not paths:
         print(f"Žádný report z Fabu v {FAB_DIR}/, přeskakuji.")
         return 0
@@ -325,11 +351,20 @@ def send_report(report: daily.Report) -> None:
     )
 
 
+def run_import_cgtrader_daily() -> int:
+    paths = report_paths(None, CGTRADER_DIR)
+    if not paths:
+        print(f"Žádný report z CGTraderu v {CGTRADER_DIR}/, přeskakuji.")
+        return 0
+    return import_cgtrader(paths, DB_PATH)
+
+
 def run_daily(dry_run: bool = False) -> int:
     steps = [
         daily.Step("gumroad", "Gumroad", run_sync_gumroad),
         daily.Step("cosmos", "Cosmos", run_sync_cosmos),
         daily.Step("fab", "Fab", run_import_fab_daily),
+        daily.Step("cgtrader", "CGTrader", run_import_cgtrader_daily),
     ]
     return daily.run_daily(
         steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,
@@ -345,8 +380,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     sync.add_argument("--since", type=_date, help="Gumroad: stáhnout prodeje od data (YYYY-MM-DD)")
     sync.add_argument("--login", action="store_true", help="Cosmos: přihlásit se v okně prohlížeče")
     imp = commands.add_parser("import", help="naimportuje ručně stažený report")
-    imp.add_argument("marketplace", choices=["fab"])
-    imp.add_argument("path", nargs="?", type=Path, help=f"CSV soubor; bez něj všechna CSV z {FAB_DIR}")
+    imp.add_argument("marketplace", choices=["fab", "cgtrader"])
+    imp.add_argument("path", nargs="?", type=Path, help="CSV soubor; bez něj všechna CSV ze složky marketplace")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
     run = commands.add_parser("run", help="denní agent: stáhne vše a pošle ranní souhrn e-mailem")
@@ -361,8 +396,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "sync" and args.marketplace == "cosmos":
         return cosmos_login() if args.login else run_sync_cosmos()
 
+    if args.command == "import" and args.marketplace == "cgtrader":
+        return import_cgtrader(report_paths(args.path, CGTRADER_DIR), DB_PATH)
     if args.command == "import":
-        return import_fab(fab_report_paths(args.path, FAB_DIR), DB_PATH)
+        return import_fab(report_paths(args.path, FAB_DIR), DB_PATH)
 
     if args.command == "catalog":
         if args.action == "check":

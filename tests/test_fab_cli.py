@@ -102,7 +102,7 @@ def test_bez_cesty_nacte_vsechna_csv_ze_slozky(tmp_path, monkeypatch, capsys):
     write(folder / "2026-02-01_2026-02-28.csv", "2026-02-05,Fab,X,Personal,1.0,0,0,1,1.0")
     (folder / "poznamka.txt").write_text("ignorovat", encoding="utf-8")
 
-    paths = cli.fab_report_paths(None, folder)
+    paths = cli.report_paths(None, folder)
     assert [p.name for p in paths] == ["2026-01-01_2026-01-31.csv", "2026-02-01_2026-02-28.csv"]
     assert run(tmp_path, *paths) == 0
     assert len(rows(tmp_path)) == 2
@@ -110,7 +110,7 @@ def test_bez_cesty_nacte_vsechna_csv_ze_slozky(tmp_path, monkeypatch, capsys):
 
 def test_prazdna_slozka(tmp_path, capsys):
     (tmp_path / "fab").mkdir()
-    assert cli.fab_report_paths(None, tmp_path / "fab") == []
+    assert cli.report_paths(None, tmp_path / "fab") == []
     assert run(tmp_path) == 1
     assert "Žádný report" in capsys.readouterr().out
 

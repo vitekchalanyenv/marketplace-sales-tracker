@@ -44,7 +44,10 @@ uv run python -m sales_tracker sync cosmos
 uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
 uv run python -m sales_tracker import fab path/to/report.csv
 
-# daily agent: all sources, log in data/private/logs/, morning report e-mail via Resend
+# CGTrader: My Sales → View details → Generate report, save the e-mailed CSV into data/private/cgtrader/, then
+uv run python -m sales_tracker import cgtrader                  # every CSV in data/private/cgtrader/
+
+# daily agent: all sources (Gumroad, Cosmos, Fab and CGTrader files), log in data/private/logs/, morning report e-mail via Resend
 # (.env: RESEND_API_KEY, REPORT_EMAIL_TO)
 uv run python -m sales_tracker run daily
 uv run python -m sales_tracker run daily --dry-run                # print the report, send nothing

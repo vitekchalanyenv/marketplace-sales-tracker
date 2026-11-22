@@ -1,0 +1,4 @@
+OID,Purchased,Product,Product ID,Buyer,Country,Original Price,Sold For,Payment Processing,After tax,Earning rate,Final Earnings,Transaction ID
+10000001,2026-01-04,https://www.cgtrader.com/3d-models/exterior/historic-exterior/sample-medieval-village,9000001,https://www.cgtrader.com/designers/sample-buyer-one,Testland,$29.99,$12.00,0.65,11.35,55%,6.24
+10000002,2026-01-09,https://www.cgtrader.com/3d-models/space/other/sample-scifi-hangar,9000002,https://www.cgtrader.com/designers/sample-buyer-two,Exampleland,$19.99,$19.99,0.88,19.11,60%,11.47,TX-SAMPLE-2
+10000003,2026-01-31,https://www.cgtrader.com/3d-models/exterior/historic-exterior/sample-medieval-village,9000001,https://www.cgtrader.com/designers/sample-buyer-three,Testland,$29.99,$29.99,1.17,28.82,56%,16.14

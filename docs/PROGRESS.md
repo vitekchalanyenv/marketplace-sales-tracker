@@ -29,13 +29,14 @@
   e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil a Vítek
   potvrdil, že e-mail dorazil do schránky. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
   Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem. Týdenní shrnutí zbývá.
-- M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
-  Vítek požádal o API (2026-11-21).
+- M4b – CGTrader: `import cgtrader [soubor]` (CSV report z e-mailu, bez kupujícího a země). Napsáno, testy prošly
+  (238), **ověřeno na skutečném reportu** 2026-11-22: částky sedí s CSV, druhý import 0 nových,
+  spárováno s katalogem. Zapojeno do denního agenta. Zbývá: reporty dalších měsíců (Vítek), API (požádáno 2026-11-21).
 
 ## Čeká na Vítka
 
 - M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
-- M4b: uložit report z CGTrader e-mailu do `data/private/cgtrader/`.
+- M4b: stáhnout reporty dalších měsíců s prodeji do `data/private/cgtrader/` (každý přejmenovat, např. `2026-09.csv`).
 
 ## Otevřené otázky
 

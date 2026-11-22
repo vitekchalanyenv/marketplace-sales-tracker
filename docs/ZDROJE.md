@@ -139,7 +139,9 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
     `Country`, `Original price`, `Sold for`, `Payment processing`, `After tax`, `Earning rate` (a další, neprohlédnuto).
     Stránkování 10 / 40 na stránku.
   - Tlačítko **„Generate report“** v detailu měsíce: **report přijde e-mailem** („Report will be sent to your email
-    shortly!“, vyzkoušeno 2026-11-21 pro jeden měsíc). Formát přílohy zatím neznáme.
+    shortly!“, vyzkoušeno 2026-11-21 pro jeden měsíc). Odkaz v e-mailu vede na
+    `cgtrader.com/profile/reports/sales/download-latest` (vždy poslední report, jen přihlášený prohlížeč) a soubor
+    se rovnou stáhne. **Formát CSV ověřen 2026-11-22**, viz `docs/spec/M4b-cgtrader.md`.
   - Stránka bere data z **interního JSON API** (bez dokumentace, může se změnit):
     `GET /api/internal/profile/sales?resource=sales&page=1&per_page=40&month=YYYY-MM` a
     `GET /api/internal/profile/sales?resource=available_months`. Přihlášení cookie z prohlížeče.
