@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sales_tracker.models import Sale, Status
 
@@ -165,6 +166,123 @@ def from_api(record: dict[str, Any], source: str = "browser") -> CosmosTransacti
         source=source,
         raw=record,
     )
+
+
+PASTE_TZ = ZoneInfo("Europe/Prague")  # the sales table shows Vítek's local time (verified 2026-11-22)
+PASTE_TX_RE = re.compile(r"^#(\d+)$")
+PASTE_AMOUNTS_RE = re.compile(
+    r"^(?P<amount>\S+)(?: (?P<currency>[A-Z]{3}))?\t(?P<payout>[^\t]+)\t(?P<date>.+)$"
+)
+PASTE_VIRTUAL = "Virtual Credits"
+
+
+def _paste_block(tx_id: str, lines: list[str], price_of: Callable[[str], int | None]) -> CosmosTransaction:
+    *product_lines, amounts_line = lines
+    if not product_lines or len(product_lines) % 2:
+        raise SkipTransaction(tx_id, "produkty nejsou ve dvojicích název + sku")
+    products = [
+        {"title": product_lines[i], "sku": product_lines[i + 1]} for i in range(0, len(product_lines), 2)
+    ]
+    skus = [p["sku"] for p in products]
+    if any(not sku or " " in sku for sku in skus):
+        raise SkipTransaction(tx_id, "řádek se sku chybí nebo obsahuje mezeru")
+    if len(set(skus)) != len(skus):
+        raise SkipTransaction(tx_id, "stejný produkt (sku) je v transakci dvakrát")
+
+    match = PASTE_AMOUNTS_RE.match(amounts_line)
+    if match is None:
+        raise SkipTransaction(tx_id, f"řádek s částkou, payoutem a datem má neznámý tvar: {amounts_line!r}")
+    payout_text = match["payout"].strip()
+    virtual = payout_text == PASTE_VIRTUAL
+    if not virtual:
+        if match["currency"] is None:
+            raise SkipTransaction(tx_id, "u částky chybí měna")
+        if match["currency"] != CURRENCY or not payout_text.endswith(f" {CURRENCY}"):
+            raise SkipTransaction(tx_id, f"částka nebo payout není v {CURRENCY}")
+    elif match["currency"] not in (None, CURRENCY):
+        raise SkipTransaction(tx_id, f"částka není v {CURRENCY}")
+    amount = _cents(match["amount"], "Amount", tx_id)
+    payout = None if virtual else _cents(payout_text.removesuffix(f" {CURRENCY}"), "Payout", tx_id)
+
+    try:
+        local = datetime.strptime(match["date"].strip(), "%Y-%m-%d %H:%M")
+    except ValueError:
+        raise SkipTransaction(tx_id, f"'Date' není datum a čas YYYY-MM-DD HH:MM: {match['date']!r}") from None
+    created_at = local.replace(tzinfo=PASTE_TZ).astimezone(UTC)
+
+    if len(skus) == 1:
+        amounts = [amount]
+    else:
+        prices = [price_of(sku) for sku in skus]
+        missing = [sku for sku, price in zip(skus, prices, strict=True) if price is None]
+        if missing:
+            raise SkipTransaction(
+                tx_id, f"víc produktů a v katalogu chybí 'price' pro: {', '.join(missing)}"
+            )
+        amounts = split_cents(amount, prices)
+
+    raw = {"id": tx_id, "products": products, "amount": match["amount"], "payout": payout_text,
+           "date": match["date"].strip()}
+    return CosmosTransaction(
+        id=tx_id,
+        created_at=created_at,
+        virtual=virtual,
+        amount_cents=amount,
+        payout_cents=payout,
+        refunded=False,  # the table does not show refunds
+        items=tuple(
+            CosmosItem(sku=p["sku"], title=p["title"], amount_cents=a, quantity=1, license=None)
+            for p, a in zip(products, amounts, strict=True)
+        ),
+        source="paste",
+        raw=raw,
+    )
+
+
+def from_paste(
+    text: str, price_of: Callable[[str], int | None]
+) -> tuple[list[CosmosTransaction], list[SkipTransaction]]:
+    """Transactions from the sales table copied from the page (Ctrl+A, Ctrl+C), format in spec M4a.
+
+    A block runs from a line "#ID" to the line "amount<TAB>payout<TAB>date"; everything else
+    (menu, account name and e-mail, paging, footer) is ignored. Multi-product transactions are
+    split by catalog list prices (price_of(sku) -> cents), an estimate the spec accepts.
+    """
+    transactions: dict[str, CosmosTransaction] = {}
+    skipped: list[SkipTransaction] = []
+    current: str | None = None
+    block: list[str] = []
+
+    def close(lines: list[str]) -> None:
+        try:
+            tx = _paste_block(current, lines, price_of)
+        except SkipTransaction as skip:
+            skipped.append(skip)
+            return
+        previous = transactions.get(tx.id)
+        if previous is not None and previous.raw != tx.raw:
+            skipped.append(SkipTransaction(tx.id, "transakce je v textu dvakrát a pokaždé jinak"))
+            return
+        transactions.setdefault(tx.id, tx)
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        start = PASTE_TX_RE.match(line)
+        if start:
+            if current is not None:
+                skipped.append(SkipTransaction(current, "neúplná transakce (chybí řádek s částkou)"))
+            current, block = start[1], []
+            continue
+        if current is None or not line:
+            continue
+        block.append(raw_line.strip(" \r\n"))
+        if "\t" in block[-1]:
+            close(block)
+            current, block = None, []
+    if current is not None:
+        skipped.append(SkipTransaction(current, "neúplná transakce (chybí řádek s částkou)"))
+
+    return list(transactions.values()), skipped
 
 
 def to_sales(tx: CosmosTransaction) -> list[Sale]:

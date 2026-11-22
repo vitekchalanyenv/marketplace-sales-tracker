@@ -1,0 +1,72 @@
+Dashboard
+Products
+Reports
+Sales
+Refund Requests
+Settings
+
+Add Product
+
+
+Sample Seller
+seller@example.org
+Latest Sales
+Search...
+
+Transaction ID	Products	Amount	Payout	
+Date
+
+#30005	
+Medieval Village Environment
+sample-medieval-village
+19.90 USD	17.41 USD	2026-01-20 23:30
+#30004	
+Medieval Village Environment
+sample-medieval-village
+Sci-Fi Hangar Environment
+sample-scifi-hangar
+25.00 USD	21.88 USD	2026-01-15 09:05
+#30003	
+Sci-Fi Hangar Environment
+sample-scifi-hangar
+9.90	Virtual Credits	2026-01-10 12:00
+10 / Page
+Total: 5
+Privacy
+Cookies
+Transaction Guide
+Sales - Leartes Studios
+0
+Dashboard
+Products
+Reports
+Sales
+Refund Requests
+Settings
+
+Add Product
+
+
+Sample Seller
+seller@example.org
+Latest Sales
+Search...
+
+Transaction ID	Products	Amount	Payout	
+Date
+
+#30002	
+Sci-Fi Hangar Environment
+sample-scifi-hangar
+9.90 USD	8.66 USD	2025-07-01 08:15
+#30001	
+Medieval Village Environment
+sample-medieval-village
+19.90 USD	17.41 USD	2025-03-29 14:30
+10 / Page
+Total: 5
+Privacy
+Cookies
+Transaction Guide
+Sales - Leartes Studios
+0

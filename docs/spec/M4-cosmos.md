@@ -2,7 +2,7 @@
 
 **Stav:** schváleno Vítkem 2026-11-21. **Cesta 1 (agent v prohlížeči): napsáno, testy prošly (196 celkem),
 ověřeno na skutečném účtu** – všechny transakce, tržba i payout sedí na cent, druhý běh 0 nových a skončil na 1. stránce.
-Cesta 2 (ruční kopie) čeká na skutečný vzorek zkopírovaného textu.
+Cesta 2 (ruční kopie): doplněná část schválena Vítkem 2026-11-22.
 CGTrader bude mít vlastní spec (M4b), až bude známý formát reportu z e-mailu, případně API.
 
 ## Cíl
@@ -81,11 +81,43 @@ Podrobně v `docs/ZDROJE.md` a `docs/spec/M4-prohlizec-moznosti.md` (pokus 2026-
 - Odpověď nemá očekávaný tvar → hláška + screenshot do `data/private/cosmos/`, nic se neuloží.
 - Logika stránkování je oddělená od Playwrightu (`fetch_pages(load_page, …)`) a testuje se bez prohlížeče.
 
-## Cesta 2: ruční kopie – `import cosmos [soubor]` (později)
+## Cesta 2: ruční kopie – `import cosmos [soubor]`
 
-- Návod pro vzorek níže. Parser se napíše podle skutečného vzorku, ne podle odhadu.
-- Text tabulky nemá částky za produkt → transakce s víc produkty se dělí podle `price` u listingu Cosmosu
-  v katalogu (Individual, bez slevy). Chybí cena → transakce se přeskočí. Katalog `price` zatím neumí.
+**Formát podle skutečného vzorku (2026-11-22, 2 stránky; porovnáno s daty z API). Příklady níže jsou vymyšlené,
+skutečný vzorek je jen v `data/private/`, vymyšlený v `data/sample/cosmos_paste.txt`:**
+
+```
+#30005	                                 ← "#" + ID transakce (stejné ID jako v API), za ním tabulátor
+Medieval Village Environment             ← název produktu
+sample-medieval-village                  ← sku (slug); dvojice název + sku se opakuje pro každý produkt
+19.90 USD	17.41 USD	2026-01-20 23:30  ← Amount, Payout, Date (oddělené tabulátorem)
+```
+
+- Virtual Credits: `9.90	Virtual Credits	2026-01-10 12:00` (částka bez měny, místo payoutu text).
+- `Date` je **místní čas (Europe/Prague) na minuty**, bez sekund. Ověřeno na skutečných transakcích v zimním
+  i letním čase proti `created_at` z API.
+- Menu, záhlaví (jméno a e-mail účtu), `10 / Page`, `Total: N` a patička se ignorují. Parser bere jen bloky
+  od řádku `#ID` po řádek s částkami a datem.
+- V textu **není** množství, licence, částka za produkt ani refund.
+
+**Převod:**
+- Stejné `CosmosTransaction` jako z API (`source = "paste"`), `quantity = 1`, `refunded = False`.
+- Transakce s jedním produktem: částka produktu = celá `Amount`.
+- Víc produktů: `Amount` se rozdělí podle `price` listingu Cosmosu v katalogu (centy metodou největšího zbytku,
+  součet sedí přesně). Je to **odhad**: skutečné částky se liší podle licence a slevy. U jediné takové skutečné
+  transakce (licence Enterprise) se odhad lišil o 2 centy na produkt, součet přesně. Když některá cena
+  v katalogu chybí, transakce se přeskočí a vypíše.
+- `raw` = jen rozparsovaná pole a zdroj, **ne celý vložený text**. V textu je i jméno a e-mail účtu.
+
+**Souběh s agentem (schváleno):** když už je transakce v DB (podle ID), ruční kopie ji **nemění** a vypíše
+„už v DB, přeskočeno“. Data z API jsou přesnější: sekundy, skutečné částky produktů, licence, množství a refund.
+Ruční kopie tak jen doplní transakce, které agent nestáhl.
+
+**Katalog:** u listingu Cosmosu přibude volitelné `price` (částka v USD, např. `19.90`). Platí jen pro dělení
+v ruční kopii, jinde se nepoužije.
+
+**Příkaz:** `import cosmos [soubor]`, bez cesty `data/private/cosmos/*.txt`. Denní agent ho nespouští, protože
+ruční kopie je záložní cesta pro chvíle, kdy agent nejede.
 
 ## Výpis
 

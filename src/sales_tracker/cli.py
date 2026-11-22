@@ -18,6 +18,7 @@ DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
 FAB_DIR = Path("data/private/fab")
 CGTRADER_DIR = Path("data/private/cgtrader")
+COSMOS_DIR = Path("data/private/cosmos")
 STATE_PATH = Path("data/private/agent_state.json")
 LOG_DIR = Path("data/private/logs")
 REFUND_WINDOW_DAYS = 30
@@ -178,11 +179,11 @@ def _match_after_sync(catalog_path: Path, db_path: Path) -> None:
     catalog_match(catalog_path, db_path)
 
 
-def report_paths(path: Path | None, folder: Path) -> list[Path]:
-    """The given file, or every *.csv in the folder (alphabetical: older periods first)."""
+def report_paths(path: Path | None, folder: Path, pattern: str = "*.csv") -> list[Path]:
+    """The given file, or every matching file in the folder (alphabetical: older periods first)."""
     if path is not None:
         return [path]
-    return sorted(folder.glob("*.csv")) if folder.is_dir() else []
+    return sorted(folder.glob(pattern)) if folder.is_dir() else []
 
 
 def _import_reports(
@@ -316,6 +317,63 @@ def sync_cosmos(
     return 0
 
 
+def import_cosmos(paths: list[Path], db_path: Path, *, catalog_path: Path = CATALOG_PATH) -> int:
+    """Pasted copies of the Cosmos sales table (fallback path, spec M4a). Never changes known transactions."""
+    if not paths:
+        print(f"Žádná ruční kopie z Cosmosu. Ulož text do {COSMOS_DIR}/*.txt nebo zadej cestu k souboru.")
+        return 1
+    catalog = None
+    if Path(catalog_path).exists():
+        try:
+            catalog = catalog_mod.load_catalog(catalog_path)
+        except catalog_mod.CatalogError:
+            print("Katalog má chyby, ceny pro dělení transakcí s víc produkty nejsou k dispozici.")
+
+    def price_of(sku: str) -> int | None:
+        return catalog.price(cosmos.MARKETPLACE, sku) if catalog else None
+
+    code = 0
+    imported = False
+    conn = db.connect(db_path)
+    try:
+        for path in paths:
+            try:
+                text = path.read_bytes().decode("utf-8-sig")
+            except FileNotFoundError:
+                print(f"Soubor {path} neexistuje.")
+                code = 1
+                continue
+            except UnicodeDecodeError:
+                print(f"{path.name}: soubor není v kódování UTF-8. Nic se z něj neuložilo.")
+                code = 1
+                continue
+            transactions, skipped = cosmos.from_paste(text, price_of)
+            total = len(transactions) + len(skipped)
+            known = {eid.split("|", 1)[0] for eid in db.external_ids(conn, cosmos.MARKETPLACE)}
+            fresh = [tx for tx in transactions if tx.id not in known]
+            sales = []
+            for tx in fresh:
+                try:
+                    sales.extend(cosmos.to_sales(tx))
+                except cosmos.SkipTransaction as skip:
+                    skipped.append(skip)
+            result = db.upsert_sales(conn, sales)
+            imported = True
+            for skip in skipped:
+                print(f"Přeskočeno: {path.name}, transakce {skip.tx_id or '(bez ID)'} – {skip.reason}")
+            print(
+                f"Cosmos (ruční kopie, {path.name}): transakcí {total}, "
+                f"už v DB {len(transactions) - len(fresh)}, záznamů {len(sales)}, nových {result.new}, "
+                f"aktualizovaných {result.updated}, přeskočeno {len(skipped)}."
+            )
+    finally:
+        conn.close()
+
+    if imported:
+        _match_after_sync(catalog_path, db_path)
+    return code
+
+
 def cosmos_login() -> int:
     from sales_tracker.cosmos_browser import CosmosBrowser
 
@@ -392,7 +450,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     sync.add_argument("--since", type=_date, help="Gumroad: stáhnout prodeje od data (YYYY-MM-DD)")
     sync.add_argument("--login", action="store_true", help="Cosmos: přihlásit se v okně prohlížeče")
     imp = commands.add_parser("import", help="naimportuje ručně stažený report")
-    imp.add_argument("marketplace", choices=["fab", "cgtrader"])
+    imp.add_argument("marketplace", choices=["fab", "cgtrader", "cosmos"])
     imp.add_argument("path", nargs="?", type=Path, help="CSV soubor; bez něj všechna CSV ze složky marketplace")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
@@ -408,6 +466,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "sync" and args.marketplace == "cosmos":
         return cosmos_login() if args.login else run_sync_cosmos()
 
+    if args.command == "import" and args.marketplace == "cosmos":
+        return import_cosmos(report_paths(args.path, COSMOS_DIR, "*.txt"), DB_PATH)
     if args.command == "import" and args.marketplace == "cgtrader":
         return import_cgtrader(report_paths(args.path, CGTRADER_DIR), DB_PATH)
     if args.command == "import":

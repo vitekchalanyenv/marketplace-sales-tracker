@@ -47,6 +47,8 @@ products:
 
 - Jeden produkt může mít na jednom marketplace **víc listingů** (např. starý a nový název na Fabu, samostatná verze).
 - Listing musí mít `ref`, `title`, nebo obojí.
+- Volitelně `price` (kladná částka v USD, např. `19.90`) jen u listingu s `ref`: ceník pro dělení transakcí
+  s víc produkty v ruční kopii z Cosmosu (M4a, doplněno 2026-11-22). Párování ji nepoužívá.
 
 ## Párování
 

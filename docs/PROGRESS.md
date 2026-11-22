@@ -20,7 +20,10 @@
 - M4a – Cosmos: **agent v prohlížeči hotový** – `sync cosmos` (Playwright, vlastní profil, headless, zachytí JSON
   z API stránky). Napsáno, testy prošly (196), **ověřeno na skutečném účtu** 2026-11-21: všechny transakce,
   tržba i payout sedí na cent, druhý běh 0 nových (zastaví na 1. stránce), vše spárováno.
-  Zbývá: ruční kopie (čeká na vzorek), refund (formát `refund_details` neznámý), jak dlouho vydrží přihlášení.
+  **Ruční kopie** (`import cosmos`, záložní cesta): napsáno, testy prošly (264), **ověřeno na skutečném vzorku**
+  2026-11-22: všechny transakce stejné jako z API (čas na minutu, částky na cent); jediný rozdíl je odhad dělení
+  u transakce se dvěma produkty (±2 ¢, součet přesný). Data z agenta ruční kopie nepřepíše (ověřeno: všechny „už v DB“).
+  Zbývá: refund (formát `refund_details` neznámý), jak dlouho vydrží přihlášení.
 - M5 – denní agent: `run daily` (Gumroad, Cosmos, Fab; každý krok zvlášť, log v `data/private/logs/`)
   a úloha v Plánovači (`scripts/install_task.ps1`, denně 8:00, po zapnutí doběhne zmeškaný běh).
   **Ranní souhrn e-mailem přes Resend, každý den** (nové prodeje po kusech, refundy, součty za měsíc, stav zdrojů).
@@ -35,7 +38,6 @@
 
 ## Čeká na Vítka
 
-- M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
 
 ## Otevřené otázky
 

@@ -40,6 +40,8 @@ uv run python -m sales_tracker sync gumroad --since 2026-01-01
 uv run python -m sales_tracker sync cosmos --login              # once: log in yourself in the opened window
 uv run python -m sales_tracker sync cosmos
 
+uv run python -m sales_tracker import cosmos                    # fallback: pasted sales table, data/private/cosmos/*.txt
+
 # Fab: save the daily sales report CSV into data/private/fab/, then
 uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
 uv run python -m sales_tracker import fab path/to/report.csv

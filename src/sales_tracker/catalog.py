@@ -7,6 +7,7 @@ a product for an unmatched listing; a wrong automatic match would silently disto
 import difflib
 import re
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,7 @@ class Listing:
     marketplace: str
     ref: str | None
     title: str | None
+    price_cents: int | None = None  # list price; only used to split pasted Cosmos transactions
 
 
 @dataclass(frozen=True)
@@ -47,15 +49,22 @@ class Catalog:
         self._by_ref: dict[tuple[str, str], str] = {}
         self._by_title: dict[tuple[str, str], str] = {}
         self._names = {p.key: p.name for p in products}
+        self._prices: dict[tuple[str, str], int] = {}
         for product in products:
             for listing in product.listings:
                 if listing.ref is not None:
                     self._by_ref[(listing.marketplace, listing.ref)] = product.key
+                    if listing.price_cents is not None:
+                        self._prices[(listing.marketplace, listing.ref)] = listing.price_cents
                 if listing.title is not None:
                     self._by_title[(listing.marketplace, normalize_title(listing.title))] = product.key
 
     def name_of(self, key: str) -> str:
         return self._names[key]
+
+    def price(self, marketplace: str, ref: str) -> int | None:
+        """List price in cents of the listing with this ref, if the catalog gives one."""
+        return self._prices.get((marketplace, ref))
 
     def match(self, marketplace: str, ref: str | None, title: str | None) -> str | None:
         if ref is not None and (marketplace, ref) in self._by_ref:
@@ -89,6 +98,19 @@ def _text(value: Any) -> str | None:
     return None
 
 
+def _price(value: Any) -> int | None:
+    """Positive amount with at most 2 decimals ('19.90' or 19.9) in cents, else None."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        cents = Decimal(str(value).strip()) * 100
+    except InvalidOperation:
+        return None
+    if cents <= 0 or cents != cents.to_integral_value():
+        return None
+    return int(cents)
+
+
 def _parse_product(index: int, raw: Any, errors: list[str]) -> Product | None:
     where = f"produkt č. {index + 1}"
     if not isinstance(raw, dict):
@@ -119,14 +141,28 @@ def _parse_product(index: int, raw: Any, errors: list[str]) -> Product | None:
             errors.append(f"{where}, {marketplace}: musí být seznam listingů (- ref: … / - title: …)")
             continue
         for item in items:
-            if not isinstance(item, dict) or set(item) - {"ref", "title"}:
-                errors.append(f"{where}, {marketplace}: listing smí mít jen 'ref' a 'title', je tam {item!r}")
+            if not isinstance(item, dict) or set(item) - {"ref", "title", "price"}:
+                errors.append(
+                    f"{where}, {marketplace}: listing smí mít jen 'ref', 'title' a 'price', je tam {item!r}"
+                )
                 continue
             ref, title = _text(item.get("ref")), _text(item.get("title"))
             if ref is None and title is None:
                 errors.append(f"{where}, {marketplace}: listing potřebuje neprázdný 'ref' nebo 'title'")
                 continue
-            listings.append(Listing(marketplace, ref, title))
+            price = None
+            if "price" in item:
+                price = _price(item["price"])
+                if price is None:
+                    errors.append(
+                        f"{where}, {marketplace}: 'price' musí být kladná částka s nejvýš 2 desetinnými "
+                        f"místy (např. 19.90), je tam {item['price']!r}"
+                    )
+                    continue
+                if ref is None:
+                    errors.append(f"{where}, {marketplace}: 'price' jde jen k listingu s 'ref'")
+                    continue
+            listings.append(Listing(marketplace, ref, title, price))
 
     if key is None or name is None:
         return None
