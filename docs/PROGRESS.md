@@ -31,12 +31,11 @@
   Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem. Týdenní shrnutí zbývá.
 - M4b – CGTrader: `import cgtrader [soubor]` (CSV report z e-mailu, bez kupujícího a země). Napsáno, testy prošly
   (238), **ověřeno na skutečném reportu** 2026-11-22: částky sedí s CSV, druhý import 0 nových,
-  spárováno s katalogem. Zapojeno do denního agenta. Zbývá: reporty dalších měsíců (Vítek), API (požádáno 2026-11-21).
+  spárováno s katalogem. Zapojeno do denního agenta. Starší měsíce se doplní až přes API (požádáno 2026-11-21), ručně je nestahujeme.
 
 ## Čeká na Vítka
 
 - M4a: uložit vzorek kopie tabulky do `data/private/cosmos/vzorek.txt` (návod ve spec).
-- M4b: stáhnout reporty dalších měsíců s prodeji do `data/private/cgtrader/` (každý přejmenovat, např. `2026-09.csv`).
 
 ## Otevřené otázky
 
@@ -50,6 +49,8 @@
   `uv add` potřebuje `--system-certs`.
 
 ## Rozhodnutí
+
+- 2026-11-22 – CGTrader: z e-mailových reportů stačí jeden měsíc (říjen), zbytek až přes API.
 
 - 2026-11-22 – Denní agent: denně 8:00, počítač nebudit, zmeškaný běh po zapnutí; upozornění na stáří stažení
   od 3 dnů. **Souhrn e-mailem každý den i bez prodejů** (místo notifikace Windows), přes Resend (zdarma, API);
