@@ -118,3 +118,18 @@ def test_main_import_cgtrader(tmp_path, monkeypatch):
 def test_denni_krok_bez_souboru_neni_chyba(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "CGTRADER_DIR", tmp_path / "cgtrader")
     assert cli.run_import_cgtrader_daily() == 0
+
+
+def test_report_stazeni_se_preskoci(tmp_path, capsys):
+    downloads = write(
+        tmp_path / "item_downloads_report.csv",
+        ",".join(cgtrader.DOWNLOADS_COLUMNS),
+        "9000001,https://www.cgtrader.com/3d-models/x/y/sample,$29.99,"
+        "https://www.cgtrader.com/designers/someone,2026-01-04,sample.zip",
+    )
+    assert cgtrader.is_downloads_report(downloads)
+    assert not cgtrader.is_downloads_report(SAMPLE / "cgtrader_report.csv")
+    assert run(tmp_path, downloads, SAMPLE / "cgtrader_report.csv") == 0
+    out = capsys.readouterr().out
+    assert "report stažení" in out and "nových 3" in out
+    assert run(tmp_path, downloads) == 0

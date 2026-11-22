@@ -53,3 +53,5 @@ Earning rate, Final Earnings, Transaction ID`
 ## Otevřené
 
 - Pokrývá report vždy jeden měsíc, nebo vše? Import funguje v obou případech (stejné OID se nezdvojí).
+- CGTrader posílá i **report stažení** (`Product ID, Product, Price, Downloader, Download Date, File name`).
+  Nejsou to prodeje (patří sem i opakovaná stažení), import ho pozná a přeskočí. Zatím nevyužito.

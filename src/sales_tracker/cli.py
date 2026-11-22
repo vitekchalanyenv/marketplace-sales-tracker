@@ -243,9 +243,21 @@ def import_cgtrader(paths: list[Path], db_path: Path, *, catalog_path: Path = CA
     if not paths:
         print(f"Žádný report z CGTraderu. Ulož CSV do {CGTRADER_DIR}/ nebo zadej cestu k souboru.")
         return 1
+    sales_paths = []
+    for path in paths:
+        if cgtrader.is_downloads_report(path):
+            print(f"{path.name}: report stažení (Item downloads), ne prodejů – přeskakuji.")
+        else:
+            sales_paths.append(path)
+    if not sales_paths:
+        return 0
     return _import_reports(
-        paths, db_path, label="CGTrader", parse=cgtrader.parse_report,
-        format_error=cgtrader.CgtraderFormatError, catalog_path=catalog_path,
+        sales_paths,
+        db_path,
+        label="CGTrader",
+        parse=cgtrader.parse_report,
+        format_error=cgtrader.CgtraderFormatError,
+        catalog_path=catalog_path,
     )
 
 

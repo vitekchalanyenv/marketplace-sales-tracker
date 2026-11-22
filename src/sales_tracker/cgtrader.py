@@ -23,6 +23,8 @@ COLUMNS = (
     "Payment Processing", "After tax", "Earning rate", "Final Earnings", "Transaction ID",
 )
 PERSONAL = ("Buyer", "Country")
+# Another report CGTrader e-mails (who downloaded which file). Not sales: recognised and skipped.
+DOWNLOADS_COLUMNS = ("Product ID", "Product", "Price", "Downloader", "Download Date", "File name")
 CURRENCY = "USD"
 # The report has dates only; read them as Vítek's local days, like Fab.
 REPORT_TZ = ZoneInfo("Europe/Prague")
@@ -90,6 +92,15 @@ def _parse_row(values: dict[str, str]) -> Sale:
         status=Status.SOLD,
         raw={k: v for k, v in values.items() if k not in PERSONAL},
     )
+
+
+def is_downloads_report(path: Path) -> bool:
+    try:
+        first = Path(path).read_bytes().decode("utf-8-sig").splitlines()[:1]
+    except (OSError, UnicodeDecodeError):
+        return False
+    header = next(csv.reader(first), [])
+    return tuple(h.strip() for h in header) == DOWNLOADS_COLUMNS
 
 
 def parse_report(path: Path) -> CgtraderReport:
