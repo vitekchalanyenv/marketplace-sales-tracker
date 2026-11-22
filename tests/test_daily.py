@@ -382,15 +382,18 @@ def run_weekly(env, writer, now=NOW, dry_run=False):
 
 def test_tydenni_sekce_jednou_za_tyden(env):
     env.store(sale("cosmos", "w1", 1000, sold_at=datetime(2026, 11, 18, 10, 0, tzinfo=UTC)))
-    good = "Minulý týden se prodal 1 kus."
+    good = "Za týden {obdobi} se prodalo {celkem_kusu}."
     run_weekly(env, lambda facts, rejected: good)  # neděle 22. 11. → minulý týden 9.–15. 11.
     subject, text = env.last()
     assert subject.endswith(" · týdenní shrnutí")
-    assert text.startswith("MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- " + "Celkem: 0 ks")
+    assert text.startswith(
+        "MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- Za týden 9. 11. – 15. 11. 2026 se prodalo 0 kusů.\n"
+        "- Celkem: 0 ks, žádné prodeje"
+    )
     monday = NOW + timedelta(days=1)  # 23. 11. → týden 16.–22. 11.
     run_weekly(env, lambda facts, rejected: good, now=monday)
     subject, text = env.last()
-    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Minulý týden se prodal 1 kus.\n- Celkem: 1 ks" in text
+    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Za týden 16. 11. – 22. 11. 2026 se prodalo 1 kus.\n- Celkem: 1 ks" in text
     run_weekly(env, lambda facts, rejected: good, now=monday + timedelta(days=1))
     assert "týdenní" not in env.last()[0]  # úterý: už odesláno
     assert env.state()["weekly_sent_for"] == "2026-11-16"
@@ -401,7 +404,7 @@ def test_tydenni_neprosel_kontrolou(env):
     text = env.last()[1]
     assert "42" not in text
     assert "Komentář Claude neprošel kontrolou čísel, posílám jen čísla." in text
-    assert "neprošel kontrolou čísel ['42']" in env.log()  # zamítnutý text je v logu
+    assert "neprošel kontrolou (číslo napsané přímo: 42)" in env.log()  # zamítnutý text je v logu
 
 
 def test_tydenni_bez_claude_a_dry_run(env):
