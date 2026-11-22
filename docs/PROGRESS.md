@@ -52,6 +52,9 @@
 
 ## Rozhodnutí
 
+- 2026-11-22 – Historie gitu přepsána (git-filter-repo, spustil Vítek), aby v ní nebyly skutečné hodnoty z prodejů a katalogu.
+  Ověřeno: žádná verze žádného souboru je neobsahuje, testy prochází i ve starých commitech. Záloha mimo repo.
+
 - 2026-11-22 – CGTrader: z e-mailových reportů stačí jeden měsíc (říjen), zbytek až přes API.
 
 - 2026-11-22 – Denní agent: denně 8:00, počítač nebudit, zmeškaný běh po zapnutí; upozornění na stáří stažení
