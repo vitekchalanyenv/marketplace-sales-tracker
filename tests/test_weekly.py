@@ -91,6 +91,8 @@ GOOD = [
     "Z produktů vedl {nejprodavanejsi_produkt}, který přinesl {produkt1_kc}.",
     "Hlavním kanálem byl {nejlepsi_marketplace} s příjmem {cosmos_kc}.",
     "Produkt {produkt1} přinesl {produkt1_kc}.",
+    "Nejvíc přinesl {nejlepsi_marketplace} ({cosmos_kc}).",  # kladný superlativ u značky pořadí
+    "Nejprodávanější byl {nejprodavanejsi_produkt}.",
     "Cosmos prodal {cosmos_kusu} a Fab {fab_kusu}.",
     "Kusů se prodalo {smer_kusu} než týden předtím, rozdíl je {zmena_kusu}.",
     "Z Cosmosu přišlo {cosmos_kc}. Dobrý týden.",
@@ -121,6 +123,8 @@ BAD = [
     ("Prodal se jen pár kusů.", "číslovka slovem „pár“"),
     ("Nejlépe se dařilo na Gumroadu.", "vlastní pořadí „Nejlépe“"),
     ("Gumroad byl nejsilnější kanál.", "vlastní pořadí „nejsilnější“"),
+    ("Nejméně přinesl {nejlepsi_marketplace}.", "vlastní pořadí „Nejméně“"),  # opak značky
+    ("Nejvíc kusů měl Fab.", "vlastní pořadí „Nejvíc“"),  # superlativ bez značky pořadí
     ("Příjem {smer_prijmu}, hlavně kvůli Gumroadu.", "vlastní příčina „kvůli“"),
     ("Dobrý týden, hlavně díky Cosmosu.", "vlastní příčina „díky“"),
     ("Většinu přinesl produkt Medieval Village.", "název produktu napsaný přímo „Medieval Village“"),

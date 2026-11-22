@@ -71,6 +71,10 @@ Cíl: ukázat, jak AI zapojit tak, aby **nevymýšlela čísla**.
   neznámá značka. Dál: opakovaný pokus, vzdání, výpadek API.
   Plus sada 10–15 ručně napsaných komentářů (dobrých i špatných) v `tests/`, na kterých se měří kontrola.
   Ostrý běh proti API jednou ručně, s Vítkovým souhlasem (stojí peníze).
+- **Eval na skutečném modelu** (`scripts/eval_commentary.py`, ručně, stojí centy): N běhů na demo týdnu, počítá
+  napoprvé / po opakování / vzdáno a zamítnutí podle pravidla; výstupy v `docs/eval/commentary-real-model.json`.
+  2026-11-22: 20 / 0 / 0. Kladný superlativ je povolen ve větě se značkou pořadí (jinak by kontrola zakázala
+  nejpřirozenější použití vlastní značky).
 - `run daily --dry-run` týdenní sekci jen vypíše a Claude nevolá. Volat ho bude `--dry-run --with-claude`.
 
 ## 4. Demo režim

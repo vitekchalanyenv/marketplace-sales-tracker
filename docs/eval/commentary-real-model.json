@@ -1,0 +1,235 @@
+{
+  "summary": {
+    "date": "2026-11-22",
+    "model": "claude-opus-5-5",
+    "data": "demo (made-up), week 19. 1. – 25. 1. 2026",
+    "runs": 20,
+    "first_attempt": 20,
+    "after_retry": 0,
+    "gave_up": 0,
+    "api_error": 0,
+    "rejections_by_rule": {}
+  },
+  "results": [
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} a čistý příjem činil {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, rozpis je Cosmos {cosmos_kc}, CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, celkově {produkt1} {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy a čistý příjem činil 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodalo se o 1 kus méně. Nejvíc vynesl Cosmos, rozpis je Cosmos 713,61 Kč, CGTrader 330,87 Kč a Gumroad 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment, celkově Medieval Village Environment 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc}, tedy {celkem_usd}. Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a kusů se prodalo o {zmena_kusu} {smer_kusu}. Nejvíc přinesl {nejlepsi_marketplace}, konkrétně Cosmos {cosmos_kc} za {cosmos_kusu}, dál následují CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}: {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč, tedy 63,21 USD. Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) a kusů se prodalo o 1 kus méně. Nejvíc přinesl Cosmos, konkrétně Cosmos 713,61 Kč za 2 kusy, dál následují CGTrader 330,87 Kč a Gumroad 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment: 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} jsi prodal {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a kusů se prodalo o {zmena_kusu} {smer_kusu}. Nejvíc vydělal {nejlepsi_marketplace}: Cosmos přinesl {cosmos_kc} ({cosmos_kusu}), CGTrader {cgtrader_kc} ({cgtrader_kusu}) a Gumroad {gumroad_kc} ({gumroad_kusu}). Produkt {produkt1} se prodal {produkt1_kusu} s příjmem {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 jsi prodal 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) a kusů se prodalo o 1 kus méně. Nejvíc vydělal Cosmos: Cosmos přinesl 713,61 Kč (2 kusy), CGTrader 330,87 Kč (1 kus) a Gumroad 251,33 Kč (1 kus). Produkt Medieval Village Environment se prodal 4 kusy s příjmem 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) z původních {predchozi_kc} a prodalo se o {zmena_kusu} {smer_kusu}. Podle marketplace: Cosmos {cosmos_kc}, CGTrader {cgtrader_kc}, Gumroad {gumroad_kc}, takže nejvíc vynesl {nejlepsi_marketplace}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}: {produkt1} {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) z původních 1 607,42 Kč a prodalo se o 1 kus méně. Podle marketplace: Cosmos 713,61 Kč, CGTrader 330,87 Kč, Gumroad 251,33 Kč, takže nejvíc vynesl Cosmos. Nejprodávanějším produktem byl Medieval Village Environment: Medieval Village Environment 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo {smer_kusu} o {zmena_kusu}. Nejlépe si vedl {nejlepsi_marketplace}, v rozpisu přinesl Cosmos {cosmos_kc} ({cosmos_kusu}), CGTrader {cgtrader_kc} ({cgtrader_kusu}) a Gumroad {gumroad_kc} ({gumroad_kusu}). Nejprodávanějším produktem byl {nejprodavanejsi_produkt} a {produkt1} celkem vynesl {produkt1_kc} za {produkt1_kusu}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo méně o 1 kus. Nejlépe si vedl Cosmos, v rozpisu přinesl Cosmos 713,61 Kč (2 kusy), CGTrader 330,87 Kč (1 kus) a Gumroad 251,33 Kč (1 kus). Nejprodávanějším produktem byl Medieval Village Environment a Medieval Village Environment celkem vynesl 1 295,81 Kč za 4 kusy.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} a čistý příjem činil {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a kusů se prodalo {smer_kusu}, rozdíl je {zmena_kusu}. Nejvíc vydělal marketplace {nejlepsi_marketplace}: Cosmos {cosmos_kusu} za {cosmos_kc}, dále CGTrader {cgtrader_kusu} za {cgtrader_kc} a Gumroad {gumroad_kusu} za {gumroad_kc}. Produkt {produkt1} přinesl {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy a čistý příjem činil 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) a kusů se prodalo méně, rozdíl je 1 kus. Nejvíc vydělal marketplace Cosmos: Cosmos 2 kusy za 713,61 Kč, dále CGTrader 1 kus za 330,87 Kč a Gumroad 1 kus za 251,33 Kč. Produkt Medieval Village Environment přinesl 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} a čistý příjem činil {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi}, kdy příjem činil {predchozi_kc}, příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vynesl marketplace {nejlepsi_marketplace}: Cosmos {cosmos_kc} za {cosmos_kusu}, CGTrader {cgtrader_kc} za {cgtrader_kusu} a Gumroad {gumroad_kc} za {gumroad_kusu}. Nejprodávanějším produktem týdne byl {nejprodavanejsi_produkt}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy a čistý příjem činil 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026, kdy příjem činil 1 607,42 Kč, příjem klesl o 311,61 Kč (19 %) a prodalo se o 1 kus méně. Nejvíc vynesl marketplace Cosmos: Cosmos 713,61 Kč za 2 kusy, CGTrader 330,87 Kč za 1 kus a Gumroad 251,33 Kč za 1 kus. Nejprodávanějším produktem týdne byl Medieval Village Environment.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} jste prodal {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, rozpis podle platforem je Cosmos {cosmos_kc}, CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, konkrétně {produkt1} {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 jste prodal 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodalo se o 1 kus méně. Nejvíc vynesl Cosmos, rozpis podle platforem je Cosmos 713,61 Kč, CGTrader 330,87 Kč a Gumroad 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment, konkrétně Medieval Village Environment 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vydělal {nejlepsi_marketplace}: Cosmos {cosmos_kc}, CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt} a {produkt1} přinesl {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodalo se o 1 kus méně. Nejvíc vydělal Cosmos: Cosmos 713,61 Kč, CGTrader 330,87 Kč a Gumroad 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment a Medieval Village Environment přinesl 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za týden {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo {smer_kusu} o {zmena_kusu}. Nejvíc vydělal {nejlepsi_marketplace}, celkově to vypadalo takto: Cosmos {cosmos_kusu} za {cosmos_kc}, CGTrader {cgtrader_kusu} za {cgtrader_kc} a Gumroad {gumroad_kusu} za {gumroad_kc}. Prodával se produkt {produkt1}, který za {produkt1_kusu} přinesl {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za týden 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo méně o 1 kus. Nejvíc vydělal Cosmos, celkově to vypadalo takto: Cosmos 2 kusy za 713,61 Kč, CGTrader 1 kus za 330,87 Kč a Gumroad 1 kus za 251,33 Kč. Prodával se produkt Medieval Village Environment, který za 4 kusy přinesl 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} a čistý příjem činil {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodaných kusů bylo {smer_kusu}, rozdíl činí {zmena_kusu}. Nejvíc vynesl {nejlepsi_marketplace}: Cosmos {cosmos_kc} za {cosmos_kusu}, dále CGTrader {cgtrader_kc} za {cgtrader_kusu} a Gumroad {gumroad_kc} za {gumroad_kusu}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}; {produkt1} přinesl {produkt1_kc} za {produkt1_kusu}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy a čistý příjem činil 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodaných kusů bylo méně, rozdíl činí 1 kus. Nejvíc vynesl Cosmos: Cosmos 713,61 Kč za 2 kusy, dále CGTrader 330,87 Kč za 1 kus a Gumroad 251,33 Kč za 1 kus. Nejprodávanějším produktem byl Medieval Village Environment; Medieval Village Environment přinesl 1 295,81 Kč za 4 kusy.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo {smer_kusu} o {zmena_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, po marketplacích vychází Cosmos {cosmos_kusu} za {cosmos_kc}, CGTrader {cgtrader_kusu} za {cgtrader_kc} a Gumroad {gumroad_kusu} za {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, produkt {produkt1} si připsal {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo méně o 1 kus. Nejvíc vynesl Cosmos, po marketplacích vychází Cosmos 2 kusy za 713,61 Kč, CGTrader 1 kus za 330,87 Kč a Gumroad 1 kus za 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment, produkt Medieval Village Environment si připsal 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} máš na kontě {celkem_kusu} a čistý příjem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodaných kusů bylo o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, v rozpisu pak Cosmos {cosmos_kc} za {cosmos_kusu}, CGTrader {cgtrader_kc} za {cgtrader_kusu} a Gumroad {gumroad_kc} za {gumroad_kusu}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, za týden {produkt1} vydělal {produkt1_kc} za {produkt1_kusu}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 máš na kontě 4 kusy a čistý příjem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodaných kusů bylo o 1 kus méně. Nejvíc vynesl Cosmos, v rozpisu pak Cosmos 713,61 Kč za 2 kusy, CGTrader 330,87 Kč za 1 kus a Gumroad 251,33 Kč za 1 kus. Nejprodávanějším produktem byl Medieval Village Environment, za týden Medieval Village Environment vydělal 1 295,81 Kč za 4 kusy.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}: Cosmos {cosmos_kc} za {cosmos_kusu}, CGTrader {cgtrader_kc} za {cgtrader_kusu} a Gumroad {gumroad_kc} za {gumroad_kusu}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}; {produkt1} přinesl {produkt1_kc} za {produkt1_kusu}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo o 1 kus méně. Nejvíc vynesl Cosmos: Cosmos 713,61 Kč za 2 kusy, CGTrader 330,87 Kč za 1 kus a Gumroad 251,33 Kč za 1 kus. Nejprodávanějším produktem byl Medieval Village Environment; Medieval Village Environment přinesl 1 295,81 Kč za 4 kusy.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi}, kdy přišlo {predchozi_kc} za {predchozi_kusu}, příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vydělal {nejlepsi_marketplace}, rozpis je Cosmos {cosmos_kusu} ({cosmos_kc}), CGTrader {cgtrader_kusu} ({cgtrader_kc}) a Gumroad {gumroad_kusu} ({gumroad_kc}). Nejprodávanějším produktem byl {nejprodavanejsi_produkt} a u {produkt1} jde o {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026, kdy přišlo 1 607,42 Kč za 5 kusů, příjem klesl o 311,61 Kč (19 %) a prodalo se o 1 kus méně. Nejvíc vydělal Cosmos, rozpis je Cosmos 2 kusy (713,61 Kč), CGTrader 1 kus (330,87 Kč) a Gumroad 1 kus (251,33 Kč). Nejprodávanějším produktem byl Medieval Village Environment a u Medieval Village Environment jde o 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo {smer_kusu} o {zmena_kusu}. Nejvíc vynesl {nejlepsi_marketplace}: Cosmos přinesl {cosmos_kc} za {cosmos_kusu}, CGTrader {cgtrader_kc} za {cgtrader_kusu} a Gumroad {gumroad_kc} za {gumroad_kusu}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, konkrétně {produkt1} s {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo méně o 1 kus. Nejvíc vynesl Cosmos: Cosmos přinesl 713,61 Kč za 2 kusy, CGTrader 330,87 Kč za 1 kus a Gumroad 251,33 Kč za 1 kus. Nejprodávanějším produktem byl Medieval Village Environment, konkrétně Medieval Village Environment s 4 kusy za 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "V týdnu {obdobi} se prodalo {celkem_kusu} a čistý příjem činil {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a kusů se prodalo o {zmena_kusu} {smer_kusu}. Cosmos {cosmos_kc} za {cosmos_kusu}, CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}, takže nejlépe si vedl {nejlepsi_marketplace}. Prodeje tvořil {produkt1} s {produkt1_kusu} a příjmem {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "V týdnu 19. 1. – 25. 1. 2026 se prodalo 4 kusy a čistý příjem činil 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a kusů se prodalo o 1 kus méně. Cosmos 713,61 Kč za 2 kusy, CGTrader 330,87 Kč a Gumroad 251,33 Kč, takže nejlépe si vedl Cosmos. Prodeje tvořil Medieval Village Environment s 4 kusy a příjmem 1 295,81 Kč.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, přehledně: Cosmos {cosmos_kc} ({cosmos_kusu}), CGTrader {cgtrader_kc} ({cgtrader_kusu}) a Gumroad {gumroad_kc} ({gumroad_kusu}). Nejprodávanějším produktem byl {nejprodavanejsi_produkt}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) a prodalo se o 1 kus méně. Nejvíc vynesl Cosmos, přehledně: Cosmos 713,61 Kč (2 kusy), CGTrader 330,87 Kč (1 kus) a Gumroad 251,33 Kč (1 kus). Nejprodávanějším produktem byl Medieval Village Environment.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} sis přišel na {celkem_kc} ({celkem_usd}) za {celkem_kusu}. Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc}, tedy o {zmena_procent}, a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}: na Cosmos {cosmos_kc} za {cosmos_kusu}, k tomu CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Nejprodávanějším produktem byl {nejprodavanejsi_produkt}, který vydělal {produkt1_kc} za {produkt1_kusu}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 sis přišel na 1 295,81 Kč (63,21 USD) za 4 kusy. Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč, tedy o 19 %, a prodalo se o 1 kus méně. Nejvíc vynesl Cosmos: na Cosmos 713,61 Kč za 2 kusy, k tomu CGTrader 330,87 Kč a Gumroad 251,33 Kč. Nejprodávanějším produktem byl Medieval Village Environment, který vydělal 1 295,81 Kč za 4 kusy.",
+      "note": null
+    },
+    {
+      "outcome": "first",
+      "attempts": [
+        {
+          "text": "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se o {zmena_kusu} {smer_kusu}. Nejvíc vydělal {nejlepsi_marketplace}: Cosmos přinesl {cosmos_kc}, CGTrader {cgtrader_kc} a Gumroad {gumroad_kc}. Produkt {produkt1} se prodal v počtu {produkt1_kusu} za {produkt1_kc}.",
+          "problems": []
+        }
+      ],
+      "final": "Za období 19. 1. – 25. 1. 2026 se prodalo 4 kusy s čistým příjmem 1 295,81 Kč (63,21 USD). Proti týdnu 12. 1. – 18. 1. 2026 příjem klesl o 311,61 Kč (19 %) a prodalo se o 1 kus méně. Nejvíc vydělal Cosmos: Cosmos přinesl 713,61 Kč, CGTrader 330,87 Kč a Gumroad 251,33 Kč. Produkt Medieval Village Environment se prodal v počtu 4 kusy za 1 295,81 Kč.",
+      "note": null
+    }
+  ]
+}

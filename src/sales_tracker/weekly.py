@@ -31,6 +31,12 @@ NUMBER_WORD_RE = re.compile(
     re.IGNORECASE,
 )
 RANKING_RE = re.compile(r"\bnej\w+", re.IGNORECASE)  # nejlépe, nejsilnější… – the order comes from code
+RANK_SLOTS = {"nejlepsi_marketplace", "nejprodavanejsi_produkt"}
+TOP_SUPERLATIVES = {
+    "nejvíc", "nejvíce", "nejlépe", "nejlepší", "nejlepším", "nejsilnější", "nejsilnějším",
+    "nejprodávanější", "nejprodávanějším", "nejúspěšnější", "nejúspěšnějším", "nejvýnosnější",
+    "nejvýnosnějším", "nejvyšší", "nejvyšším",
+}
 CAUSE_RE = re.compile(r"\b(kvůli|díky|protože|proto|způsobi\w*|zásluh\w*)\b", re.IGNORECASE)
 DIRECTION_RE = re.compile(
     r"\b(\w*(vzr[ůo]st|kles|pokles|nárůst|narost|propad|zlepš|zhorš|zdvoj|ztroj|přibyl|ubyl)\w*|"
@@ -51,7 +57,7 @@ Text se po tobě strojově kontroluje a zamítne se, když:
   a {smer_kusu}, např. „Příjem {smer_prijmu} o {zmena_kc}.“,
 - obsahuje množství slovy (jediný, oba, několik, většina, pár…),
 - obsahuje pořadí nebo superlativ (nejlépe, nejsilnější…). Na pořadí jsou značky {nejlepsi_marketplace}
-  a {nejprodavanejsi_produkt},
+  a {nejprodavanejsi_produkt}; kladný superlativ (nejvíc, nejlépe…) smíš použít jen ve stejné větě s nimi,
 - uvádí příčinu (kvůli, díky, protože…). Příčiny v datech nejsou,
 - značka u marketplace nebo produktu nestojí ve stejné větě hned za jeho názvem. Názvy produktů piš jen
   značkou ({produkt1} …), marketplace jménem.
@@ -286,7 +292,13 @@ def check(text: str, available: dict[str, Slot]) -> list[str]:
         problems.append("číslo napsané přímo: " + ", ".join(digits))
     problems += [f"číslovka slovem „{m.group()}“" for m in NUMBER_WORD_RE.finditer(plain)]
     problems += [f"vlastní směr změny „{m.group()}“" for m in DIRECTION_RE.finditer(plain)]
-    problems += [f"vlastní pořadí „{m.group()}“" for m in RANKING_RE.finditer(plain)]
+    for sentence in SENTENCE_END_RE.split(text):
+        # A positive superlative may describe the code's own ranking slot in the same sentence
+        # ("Nejvíc přinesl {nejlepsi_marketplace}"); any other superlative is the model's own order.
+        has_rank_slot = any(name in RANK_SLOTS for name in SLOT_RE.findall(sentence))
+        for m in RANKING_RE.finditer(SLOT_RE.sub(" ", sentence)):
+            if not (has_rank_slot and m.group().lower() in TOP_SUPERLATIVES):
+                problems.append(f"vlastní pořadí „{m.group()}“")
     problems += [f"vlastní příčina „{m.group()}“" for m in CAUSE_RE.finditer(plain)]
     product_names = {s.value for name, s in available.items() if re.fullmatch(r"produkt\d+", name)}
     problems += [

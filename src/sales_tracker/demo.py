@@ -3,8 +3,8 @@
 Everything runs in a temporary folder: Gumroad answers from sample JSON through a fake HTTP
 transport, Cosmos from sample API pages and a pasted table, Fab and CGTrader from sample CSVs.
 "Yesterday's" run is replayed silently first, so the morning report shows only what is new since
-then. The weekly commentary is a fixed example, not Claude, but it goes through the same check –
-and its first version is wrong on purpose, to show a rejection. "Today" and the exchange rates are
+then. The weekly commentary is Claude's real output for this week, stored; it goes through the same
+check, after a hand-made wrong first version that shows a rejection. "Today" and the exchange rates are
 fixed, so the output is the same on every run.
 """
 
@@ -28,10 +28,14 @@ NEW_SINCE = "2026-01-19T23:00:00Z"  # sales from 20. 1. (local) on are new since
 RATES = {"USD": Decimal("20.50"), "EUR": Decimal("24.75")}  # made up, not ČNB
 
 DEMO_BAD = "Cosmos přinesl {cgtrader_kc} a prodeje vzrostly."
-DEMO_GOOD = (
-    "Za týden {obdobi}: {celkem_kusu} za {celkem_kc}. Hlavním kanálem byl "
-    "{nejlepsi_marketplace} s příjmem {cosmos_kc}, z produktů vedl {nejprodavanejsi_produkt}. "
-    "Proti týdnu předtím příjem {smer_prijmu} o {zmena_procent}."
+# A real output of claude-opus-5-5 for this demo week, unchanged (eval 2026-11-22, run 18 of 20 in
+# docs/eval/commentary-real-model.json). Stored so the demo stays offline and deterministic.
+DEMO_CLAUDE = (
+    "Za období {obdobi} se prodalo {celkem_kusu} s čistým příjmem {celkem_kc} ({celkem_usd}). "
+    "Proti týdnu {predchozi_obdobi} příjem {smer_prijmu} o {zmena_kc} ({zmena_procent}) a prodalo se "
+    "o {zmena_kusu} {smer_kusu}. Nejvíc vynesl {nejlepsi_marketplace}, přehledně: Cosmos {cosmos_kc} "
+    "({cosmos_kusu}), CGTrader {cgtrader_kc} ({cgtrader_kusu}) a Gumroad {gumroad_kc} ({gumroad_kusu}). "
+    "Nejprodávanějším produktem byl {nejprodavanejsi_produkt}."
 )
 
 
@@ -43,8 +47,9 @@ class DemoRates:
 
 
 def demo_writer(available, rejected):
-    """Stands in for Claude: a wrong first version (the check rejects it), then a correct one."""
-    return DEMO_BAD if rejected is None else DEMO_GOOD
+    """Stands in for Claude: a hand-made wrong first version (the check rejects it, see the log),
+    then Claude's real stored output."""
+    return DEMO_BAD if rejected is None else DEMO_CLAUDE
 
 
 def _json(name: str):
@@ -122,12 +127,12 @@ def run(work: Path | None = None, send: daily.Send | None = None) -> int:
 
         print("DEMO – vymyšlená data z data/sample/, nic se nestahuje ani neodesílá.")
         print(f"„Dnes“ je {NOW.astimezone(daily.LOCAL_TZ):%d. %m. %Y %H:%M}, kurzy jsou vymyšlené, "
-              "komentář je ukázkový (ne od Claude), ale prošel stejnou kontrolou.\n")
+              "komentář je uložený skutečný výstup Claude na těchto datech.\n")
         return daily.run_daily(
             _steps(db_path, catalog, NOW), send=send, now=NOW,
             weekly_config=daily.WeeklyConfig(
                 demo_writer, None, _product_names(catalog),
-                label="Ukázkový komentář (ne od Claude)",
+                label="Komentář od Claude (skutečný výstup na vymyšlených datech, uložený pro demo)",
             ),
             **common,
         )
