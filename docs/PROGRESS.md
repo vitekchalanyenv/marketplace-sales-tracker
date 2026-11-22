@@ -36,14 +36,14 @@
   prošly (311). Pondělní sekce „Minulý týden“: čísla počítá kód, komentář píše Claude a deterministická kontrola
   ověří každé číslo (eval: ručně psané dobré a špatné komentáře v `tests/test_weekly.py`). Částky v Kč kurzem ČNB.
   `exclude` pro zkušební prodeje. `demo` na vymyšlených datech. CI (GitHub Actions) běží a prochází.
-  **Neověřeno ostře:** komentář Claude (čeká na API klíč od Vítka).
+  **Ověřeno ostře 2026-11-22** (`--dry-run --with-claude`, skutečné API, `claude-opus-5-5`): komentář prošel kontrolou
+  čísel napoprvé, nic se neodeslalo. Neověřeno: první skutečný pondělní e-mail.
 - M4b – CGTrader: `import cgtrader [soubor]` (CSV report z e-mailu, bez kupujícího a země). Napsáno, testy prošly
   (238), **ověřeno na skutečném reportu** 2026-11-22: částky sedí s CSV, druhý import 0 nových,
   spárováno s katalogem. Zapojeno do denního agenta. Starší měsíce se doplní až přes API (požádáno 2026-11-21), ručně je nestahujeme.
 
 ## Čeká na Vítka
 
-- M5b: založit API klíč Anthropicu (console.anthropic.com, dobít kredit) a dát ho do `.env` jako `ANTHROPIC_API_KEY`.
 - CGTrader API: čeká se na schválení od CGTraderu.
 
 ## Otevřené otázky
