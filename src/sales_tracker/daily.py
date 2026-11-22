@@ -19,7 +19,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from sales_tracker import db, fx
+from sales_tracker import db, fx, weekly
 
 WATCHED = ("gumroad", "cosmos")  # automatic sources; Fab is uploaded by hand
 STALE_DAYS = 3
@@ -85,6 +85,15 @@ class Report:
 
 
 Send = Callable[[Report], None]
+
+
+@dataclass(frozen=True)
+class WeeklyConfig:
+    """Weekly section (spec M5b): in the first report of each week, about the week before."""
+
+    writer: Callable[..., str] | None  # Claude (weekly.ClaudeWriter) or None = no commentary
+    note_without_writer: str | None = None
+    product_name: Callable[[str], str] = lambda key: key
 
 
 # --- steps -----------------------------------------------------------------------------------
@@ -266,11 +275,15 @@ def build_report(
     now: datetime,
     czk=None,
     month_czk: dict[tuple[str, str], int | None] | None = None,
+    weekly_section: Section | None = None,
 ) -> Report:
     """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK."""
     failed = [r for r in results if not r.ok]
     report = Report(_subject(day, sales, failed))
     month_czk = month_czk or {}
+    if weekly_section is not None:
+        report.subject += " · týdenní shrnutí"
+        report.sections.append(weekly_section)
 
     report.sections.append(Section(
         "Nové prodeje od minulého souhrnu",
@@ -369,6 +382,7 @@ def run_daily(
     send: Send | None,
     now: datetime,
     make_rates=None,
+    weekly_config: WeeklyConfig | None = None,
 ) -> int:
     """make_rates(conn, today) -> fx.Rates for CZK amounts; None = amounts in original currency only."""
     """Run all steps and send the report. send=None is a dry run: print only, change no state."""
@@ -396,9 +410,25 @@ def run_daily(
                 haler = czk(net, currency, sold_at)
                 previous = month_czk.get(key, 0)
                 month_czk[key] = None if haler is None or previous is None else previous + haler
+        week_key = weekly.last_week(day)[0].isoformat()
+        weekly_section = None
+        weekly_log: list[str] = []
+        if weekly_config is not None and state.get("weekly_sent_for") != week_key:
+            facts = weekly.week_facts(conn, day, czk, weekly_config.product_name)
+            if weekly_config.writer is None:
+                comment = weekly.Commentary(None, weekly_config.note_without_writer, [])
+            else:
+                comment = weekly.commentary(facts, weekly_config.writer)
+            weekly_log = comment.log
+            weekly_section = Section(
+                f"Minulý týden ({facts['obdobi']})",
+                ([comment.text] if comment.text else [])
+                + weekly.fact_lines(facts)
+                + ([comment.note] if comment.note else []),
+            )
         report = build_report(
             day=day, results=results, sales=sales, refunds=refunds, month=month, state=state,
-            now=now, czk=czk, month_czk=month_czk,
+            now=now, czk=czk, month_czk=month_czk, weekly_section=weekly_section,
         )
     finally:
         conn.close()
@@ -408,6 +438,7 @@ def run_daily(
     for result in results:
         log.append(f"--- {result.step.name}: {'ok' if result.ok else 'CHYBA'} ---")
         log.append(result.output.rstrip())
+    log.extend(weekly_log)
     log.append(f"--- souhrn: {report.subject} ---")
     log.append(report.text().rstrip())
 
@@ -428,6 +459,8 @@ def run_daily(
                 state["last_success"][result.step.key] = now.isoformat()
         if sent:
             _save_reported(state, after)
+            if weekly_section is not None:
+                state["weekly_sent_for"] = week_key
         elif "reported" not in state:
             _save_reported(state, since)  # anchor the first baseline, or the next run would skip these sales
         state_path.parent.mkdir(parents=True, exist_ok=True)

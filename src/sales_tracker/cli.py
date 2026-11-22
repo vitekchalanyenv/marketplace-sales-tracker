@@ -445,7 +445,32 @@ def run_import_cgtrader_daily() -> int:
     return import_cgtrader(paths, DB_PATH)
 
 
-def run_daily(dry_run: bool = False) -> int:
+def weekly_config(dry_run: bool, with_claude: bool) -> daily.WeeklyConfig:
+    from sales_tracker import weekly
+
+    catalog = None
+    if CATALOG_PATH.exists():
+        try:
+            catalog = catalog_mod.load_catalog(CATALOG_PATH)
+        except catalog_mod.CatalogError:
+            catalog = None
+
+    def product_name(key: str) -> str:
+        try:
+            return catalog.name_of(key) if catalog else key
+        except KeyError:
+            return key
+
+    if dry_run and not with_claude:
+        return daily.WeeklyConfig(None, "(zkušební běh: komentář Claude se nevolá)", product_name)
+    load_dotenv(Path.cwd() / ".env")
+    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not key:
+        return daily.WeeklyConfig(None, "Komentář Claude chybí: chybí ANTHROPIC_API_KEY v .env.", product_name)
+    return daily.WeeklyConfig(weekly.ClaudeWriter(key), None, product_name)
+
+
+def run_daily(dry_run: bool = False, with_claude: bool = False) -> int:
     steps = [
         daily.Step("gumroad", "Gumroad", run_sync_gumroad),
         daily.Step("cosmos", "Cosmos", run_sync_cosmos),
@@ -456,6 +481,7 @@ def run_daily(dry_run: bool = False) -> int:
         steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,
         send=None if dry_run else send_report, now=datetime.now(UTC),
         make_rates=lambda conn, today: fx.Rates(conn, today),
+        weekly_config=weekly_config(dry_run, with_claude),
     )
 
 
@@ -481,6 +507,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     run = commands.add_parser("run", help="denní agent: stáhne vše a pošle ranní souhrn e-mailem")
     run.add_argument("job", choices=["daily"])
     run.add_argument("--dry-run", action="store_true", help="souhrn jen vypsat, e-mail neposílat")
+    run.add_argument("--with-claude", action="store_true", help="i při --dry-run zavolat Claude na komentář")
     args = parser.parse_args(argv)
     if args.command == "sync" and args.login and args.marketplace != "cosmos":
         parser.error("--login je jen pro cosmos")
@@ -514,6 +541,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return exclude_sale(DB_PATH, args.marketplace, args.external_id, reason)
 
     if args.command == "run":
-        return run_daily(dry_run=args.dry_run)
+        if args.with_claude and not args.dry_run:
+            parser.error("--with-claude je jen pro --dry-run")
+        return run_daily(dry_run=args.dry_run, with_claude=args.with_claude)
 
     return run_sync_gumroad(args.since)

@@ -42,6 +42,13 @@ def _gumroad_transport() -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 
+def _product_names(catalog_path: Path):
+    from sales_tracker.catalog import load_catalog
+
+    catalog = load_catalog(catalog_path)
+    return lambda key: catalog.name_of(key) if key in {p.key for p in catalog.products} else key
+
+
 def run(work: Path | None = None) -> int:
     owned = work is None
     work = Path(tempfile.mkdtemp(prefix="sales-tracker-demo-")) if owned else Path(work)
@@ -74,6 +81,12 @@ def run(work: Path | None = None) -> int:
         return daily.run_daily(
             steps, db_path=db_path, state_path=work / "state.json", log_dir=work / "logs",
             send=None, now=NOW, make_rates=lambda conn, today: DemoRates(),
+            weekly_config=daily.WeeklyConfig(
+                None,
+                "(V ostrém běhu sem Claude napíše 2–4 věty komentáře. Než se pošle, kontrola ověří, "
+                "že každé číslo v textu je v datech výše.)",
+                _product_names(catalog),
+            ),
         )
     finally:
         if owned:

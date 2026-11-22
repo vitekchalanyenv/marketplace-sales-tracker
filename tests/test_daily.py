@@ -253,10 +253,15 @@ def test_cli_run_daily(monkeypatch):
     from sales_tracker import cli
 
     calls = []
-    monkeypatch.setattr(cli, "run_daily", lambda dry_run=False: calls.append(dry_run) or 7)
+    monkeypatch.setattr(
+        cli, "run_daily", lambda dry_run=False, with_claude=False: calls.append((dry_run, with_claude)) or 7
+    )
     assert cli.main(["run", "daily"]) == 7
     assert cli.main(["run", "daily", "--dry-run"]) == 7
-    assert calls == [False, True]
+    assert cli.main(["run", "daily", "--dry-run", "--with-claude"]) == 7
+    assert calls == [(False, False), (True, False), (True, True)]
+    with pytest.raises(SystemExit):
+        cli.main(["run", "daily", "--with-claude"])
 
 
 def test_fab_bez_souboru_neni_chyba(tmp_path, monkeypatch, capsys):
@@ -364,3 +369,50 @@ def test_refund_zaporne_a_rok(env):
     text = env.last()[1]
     assert "Cosmos – Chata – 1× – vráceno -10,00 USD (29. 3. 2025 14:30)" in text
     assert "Fab – Fab chata – 1× – vráceno -8,80 USD (22. 11. 03:00)" in text
+
+
+
+def run_weekly(env, writer, now=NOW, dry_run=False):
+    return daily.run_daily(
+        [daily.Step("cosmos", "Cosmos", ok_step)], db_path=env.db, state_path=env.tmp / "state.json",
+        log_dir=env.tmp / "logs", send=None if dry_run else env.send, now=now,
+        weekly_config=daily.WeeklyConfig(writer, "bez komentáře"),
+    )
+
+
+def test_tydenni_sekce_jednou_za_tyden(env):
+    env.store(sale("cosmos", "w1", 1000, sold_at=datetime(2026, 11, 18, 10, 0, tzinfo=UTC)))
+    good = "Minulý týden se prodal 1 kus."
+    run_weekly(env, lambda facts, rejected: good)  # neděle 22. 11. → minulý týden 9.–15. 11.
+    subject, text = env.last()
+    assert subject.endswith(" · týdenní shrnutí")
+    assert text.startswith("MINULÝ TÝDEN (9. 11. – 15. 11. 2026)\n- " + "Celkem: 0 ks")
+    monday = NOW + timedelta(days=1)  # 23. 11. → týden 16.–22. 11.
+    run_weekly(env, lambda facts, rejected: good, now=monday)
+    subject, text = env.last()
+    assert "MINULÝ TÝDEN (16. 11. – 22. 11. 2026)\n- Minulý týden se prodal 1 kus.\n- Celkem: 1 ks" in text
+    run_weekly(env, lambda facts, rejected: good, now=monday + timedelta(days=1))
+    assert "týdenní" not in env.last()[0]  # úterý: už odesláno
+    assert env.state()["weekly_sent_for"] == "2026-11-16"
+
+
+def test_tydenni_neprosel_kontrolou(env):
+    run_weekly(env, lambda facts, rejected: "Prodalo se 42 kusů.")
+    text = env.last()[1]
+    assert "42" not in text
+    assert "Komentář Claude neprošel kontrolou čísel, posílám jen čísla." in text
+    assert "neprošel kontrolou čísel ['42']" in env.log()  # zamítnutý text je v logu
+
+
+def test_tydenni_bez_claude_a_dry_run(env):
+    run_weekly(env, None, dry_run=True)
+    assert "týdenní shrnutí" in env.log() and "- bez komentáře" in env.log()
+    assert not (env.tmp / "state.json").exists()  # zkušební běh týden neoznačí jako odeslaný
+
+
+def test_tydenni_neodeslany_se_zopakuje(env):
+    env.fail_send = True
+    run_weekly(env, None)
+    env.fail_send = False
+    run_weekly(env, None, now=NOW + timedelta(hours=1))
+    assert env.last()[0].endswith(" · týdenní shrnutí")

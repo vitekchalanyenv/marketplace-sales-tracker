@@ -31,7 +31,12 @@
   a běh přes Plánovač bez okna konzole (ještě ve verzi s notifikací). **Ostré odeslání 2026-11-22:** Resend
   e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil a Vítek
   potvrdil, že e-mail dorazil do schránky. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
-  Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem. Týdenní shrnutí zbývá.
+  Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem.
+- M5b – týdenní shrnutí, měny, zkušební prodeje, demo (spec `docs/spec/M5b-tyden-meny-demo.md`). Napsáno, testy
+  prošly (311). Pondělní sekce „Minulý týden“: čísla počítá kód, komentář píše Claude a deterministická kontrola
+  ověří každé číslo (eval: ručně psané dobré a špatné komentáře v `tests/test_weekly.py`). Částky v Kč kurzem ČNB.
+  `exclude` pro zkušební prodeje. `demo` na vymyšlených datech. CI (GitHub Actions) běží a prochází.
+  **Neověřeno ostře:** komentář Claude (čeká na API klíč od Vítka).
 - M4b – CGTrader: `import cgtrader [soubor]` (CSV report z e-mailu, bez kupujícího a země). Napsáno, testy prošly
   (238), **ověřeno na skutečném reportu** 2026-11-22: částky sedí s CSV, druhý import 0 nových,
   spárováno s katalogem. Zapojeno do denního agenta. Starší měsíce se doplní až přes API (požádáno 2026-11-21), ručně je nestahujeme.

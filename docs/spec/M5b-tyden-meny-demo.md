@@ -1,6 +1,7 @@
 # Specifikace M5b: týdenní shrnutí od Claude, měny, zkušební prodeje, demo
 
-**Stav:** schváleno Vítkem 2026-11-22. Body podle Vítkova seznamu „Co dotáhnout“
+**Stav:** schváleno Vítkem 2026-11-22. Vše napsáno, testy prošly (311). Na skutečných datech ověřeno: zkušební
+prodej vyloučen, Kč sedí s ručním přepočtem kurzy ČNB, týdenní čísla v `--dry-run`. Ostrý komentář Claude čeká na API klíč. Body podle Vítkova seznamu „Co dotáhnout“
 (README a GitHub Actions nepotřebují spec; CI už běží).
 
 ## 1. Měny (otevřená otázka z PROGRESS)

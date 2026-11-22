@@ -51,9 +51,10 @@ uv run python -m sales_tracker import fab path/to/report.csv
 uv run python -m sales_tracker import cgtrader                  # every CSV in data/private/cgtrader/
 
 # daily agent: all sources (Gumroad, Cosmos, Fab and CGTrader files), log in data/private/logs/, morning report e-mail via Resend
-# (.env: RESEND_API_KEY, REPORT_EMAIL_TO)
+# (.env: RESEND_API_KEY, REPORT_EMAIL_TO; ANTHROPIC_API_KEY for the Monday weekly commentary)
 uv run python -m sales_tracker run daily
 uv run python -m sales_tracker run daily --dry-run                # print the report, send nothing
+uv run python -m sales_tracker run daily --dry-run --with-claude  # ...and ask Claude for the weekly commentary
 powershell -ExecutionPolicy Bypass -File scripts\install_task.ps1   # Task Scheduler, daily 08:00, catches up after boot
 powershell -ExecutionPolicy Bypass -File scripts\uninstall_task.ps1
 
