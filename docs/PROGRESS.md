@@ -43,6 +43,8 @@
 
 ## Čeká na Vítka
 
+- M5b: založit API klíč Anthropicu (console.anthropic.com, dobít kredit) a dát ho do `.env` jako `ANTHROPIC_API_KEY`.
+- CGTrader API: čeká se na schválení od CGTraderu.
 
 ## Otevřené otázky
 
