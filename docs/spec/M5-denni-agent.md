@@ -68,7 +68,7 @@ Ověřeno na dokumentaci 2026-11-22 (resend.com/pricing, docs/api-reference/emai
   `text`, `html`. Úspěch vrací `{"id": …}`.
 - Bez ověřené vlastní domény lze posílat **jen na e-mail majitele účtu** (chyba 403 „You can only send testing emails
   to your own email address“). To nám stačí, protože souhrn jde Vítkovi. Odesílatel je `onboarding@resend.dev`.
-  Že tohle odesílání bez domény funguje, je **odvozené z chybové hlášky**. Ověří se prvním skutečným odesláním.
+  Že tohle odesílání bez domény funguje, je **odvozené z chybové hlášky**. Ověřeno prvním skutečným odesláním 2026-11-22 (e-mail dorazil).
 - Chyby: 401/403 (klíč, příjemce) a 429 (limit) se vypíšou s kódem a hláškou. Tvar těla chybové odpovědi
   dokumentace neukazuje, proto se z něj bere jen `message`, pokud tam je.
 - `.env`: `RESEND_API_KEY`, `REPORT_EMAIL_TO` (Vítkův e-mail, ten z účtu Resend), volitelně `REPORT_EMAIL_FROM`.

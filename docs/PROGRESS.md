@@ -26,8 +26,8 @@
   **Ranní souhrn e-mailem přes Resend, každý den** (nové prodeje po kusech, refundy, součty za měsíc, stav zdrojů).
   Napsáno, testy prošly (222). Na skutečných datech ověřeno: `run daily --dry-run` (měsíční součty sedí s DB)
   a běh přes Plánovač bez okna konzole (ještě ve verzi s notifikací). **Ostré odeslání 2026-11-22:** Resend
-  e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil. Že e-mail
-  opravdu dorazil do schránky, potvrdí Vítek. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
+  e-mail přijal (bez vlastní domény, odesílatel `onboarding@resend.dev`), stav souhrnu se uložil a Vítek
+  potvrdil, že e-mail dorazil do schránky. Neověřeno: chyba při vypršeném přihlášení, doběhnutí po zapnutí PC.
   Notifikace ve Windows (první verze) nepřišla, nahrazena e-mailem. Týdenní shrnutí zbývá.
 - M4b – CGTrader: průzkum hotový (`docs/ZDROJE.md`); report z My Sales chodí e-mailem, čeká se na něj.
   Vítek požádal o API (2026-11-21).
