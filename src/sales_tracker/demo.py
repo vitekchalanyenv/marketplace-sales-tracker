@@ -49,7 +49,8 @@ def _product_names(catalog_path: Path):
     return lambda key: catalog.name_of(key) if key in {p.key for p in catalog.products} else key
 
 
-def run(work: Path | None = None) -> int:
+def run(work: Path | None = None, send: daily.Send | None = None) -> int:
+    """send: receives the report instead of e-mailing it (the README screenshot uses this)."""
     owned = work is None
     work = Path(tempfile.mkdtemp(prefix="sales-tracker-demo-")) if owned else Path(work)
     try:
@@ -80,7 +81,7 @@ def run(work: Path | None = None) -> int:
         print(f"„Dnes“ je {NOW.astimezone(daily.LOCAL_TZ):%d. %m. %Y %H:%M}, kurzy jsou vymyšlené.\n")
         return daily.run_daily(
             steps, db_path=db_path, state_path=work / "state.json", log_dir=work / "logs",
-            send=None, now=NOW, make_rates=lambda conn, today: DemoRates(),
+            send=send, now=NOW, make_rates=lambda conn, today: DemoRates(),
             weekly_config=daily.WeeklyConfig(
                 None,
                 "(V ostrém běhu sem Claude napíše 2–4 věty komentáře. Než se pošle, kontrola ověří, "
