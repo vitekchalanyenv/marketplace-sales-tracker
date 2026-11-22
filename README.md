@@ -56,6 +56,9 @@ uv run python -m sales_tracker run daily --dry-run                # print the re
 powershell -ExecutionPolicy Bypass -File scripts\install_task.ps1   # Task Scheduler, daily 08:00, catches up after boot
 powershell -ExecutionPolicy Bypass -File scripts\uninstall_task.ps1
 
+# leave a sale out of all totals (e.g. your own test purchase); --undo counts it again
+uv run python -m sales_tracker exclude gumroad <sale id> --reason "test purchase"
+
 # product catalog (data/private/katalog.yaml, see data/sample/katalog.yaml)
 uv run python -m sales_tracker catalog check   # validate + list unmatched sales with ready-to-paste YAML
 uv run python -m sales_tracker catalog match   # re-assign every sale to a product

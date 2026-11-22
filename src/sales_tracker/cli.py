@@ -391,6 +391,22 @@ def run_sync_cosmos() -> int:
         return sync_cosmos(DB_PATH, browser.load_page)
 
 
+def exclude_sale(db_path: Path, marketplace: str, external_id: str, reason: str | None) -> int:
+    conn = db.connect(db_path)
+    try:
+        found = db.set_excluded(conn, marketplace, external_id, reason)
+    finally:
+        conn.close()
+    if not found:
+        print(f"Prodej {marketplace} {external_id} v databázi není. Nic se nezměnilo.")
+        return 1
+    if reason is None:
+        print(f"Prodej {marketplace} {external_id} se zase počítá do součtů.")
+    else:
+        print(f"Prodej {marketplace} {external_id} se nepočítá do součtů ({reason}).")
+    return 0
+
+
 def run_sync_gumroad(since: date | None = None) -> int:
     # Explicit path: without it python-dotenv searches upwards from this file, not from cwd.
     load_dotenv(Path.cwd() / ".env")
@@ -454,6 +470,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     imp.add_argument("path", nargs="?", type=Path, help="CSV soubor; bez něj všechna CSV ze složky marketplace")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
+    excl = commands.add_parser("exclude", help="nepočítat prodej do součtů (např. zkušební nákup)")
+    excl.add_argument("marketplace", choices=["gumroad", "cosmos", "fab", "cgtrader"])
+    excl.add_argument("external_id")
+    group = excl.add_mutually_exclusive_group(required=True)
+    group.add_argument("--reason", help="proč se nepočítá, např. \"zkušební nákup\"")
+    group.add_argument("--undo", action="store_true", help="zase počítat")
     run = commands.add_parser("run", help="denní agent: stáhne vše a pošle ranní souhrn e-mailem")
     run.add_argument("job", choices=["daily"])
     run.add_argument("--dry-run", action="store_true", help="souhrn jen vypsat, e-mail neposílat")
@@ -477,6 +499,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.action == "check":
             return catalog_check(CATALOG_PATH, DB_PATH)
         return catalog_match(CATALOG_PATH, DB_PATH)
+
+    if args.command == "exclude":
+        reason = None if args.undo else args.reason.strip()
+        if reason == "":
+            parser.error("--reason nesmí být prázdný")
+        return exclude_sale(DB_PATH, args.marketplace, args.external_id, reason)
 
     if args.command == "run":
         return run_daily(dry_run=args.dry_run)

@@ -46,11 +46,12 @@
 
 ## Známé problémy
 
-- V DB je zkušební prodej Gumroad (malá částka, 2026-11-20). Zkreslí součty, dokud se nevyřeší (refund / označení jako test).
 - HTTPS na Vítkově počítači jde přes certifikát, kterému věří jen úložiště Windows (antivirus/proxy). Řešeno: git → `http.sslBackend schannel`, Python → `ssl.create_default_context()`. Každý nový HTTP klient musí jet stejně.
   `uv add` potřebuje `--system-certs`.
 
 ## Rozhodnutí
+
+- 2026-11-22 – Zkušební nákup z Gumroadu označen `exclude` (nepočítá se do součtů, v DB zůstává).
 
 - 2026-11-22 – Historie gitu přepsána (git-filter-repo, spustil Vítek), aby v ní nebyly skutečné hodnoty z prodejů a katalogu.
   Ověřeno: žádná verze žádného souboru je neobsahuje, testy prochází i ve starých commitech. Záloha mimo repo.

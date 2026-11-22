@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS sales (
     raw           TEXT    NOT NULL,  -- original record as JSON
     product_key   TEXT,              -- catalog product (M2); NULL = unmatched
     quantity      INTEGER NOT NULL DEFAULT 1,  -- units in this record (M3); negative = refund row
+    excluded      INTEGER NOT NULL DEFAULT 0,  -- 1 = left out of all totals, e.g. a test purchase (M5b)
+    excluded_reason TEXT,
     first_seen_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     PRIMARY KEY (marketplace, external_id)
@@ -61,6 +63,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "quantity" not in columns:  # added in M3
         with conn:
             conn.execute("ALTER TABLE sales ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
+    if "excluded" not in columns:  # added in M5b
+        with conn:
+            conn.execute("ALTER TABLE sales ADD COLUMN excluded INTEGER NOT NULL DEFAULT 0")
+            conn.execute("ALTER TABLE sales ADD COLUMN excluded_reason TEXT")
 
 
 def _row(sale: Sale) -> dict:
@@ -162,3 +168,18 @@ def unmatched_listings(conn: sqlite3.Connection, match: Matcher) -> list[Unmatch
 def external_ids(conn: sqlite3.Connection, marketplace: str) -> set[str]:
     rows = conn.execute("SELECT external_id FROM sales WHERE marketplace = ?", (marketplace,))
     return {row[0] for row in rows}
+
+
+def set_excluded(
+    conn: sqlite3.Connection, marketplace: str, external_id: str, reason: str | None
+) -> bool:
+    """Leave a sale out of all totals (reason given) or count it again (reason None).
+
+    Upsert never touches these columns, so the mark survives every later sync. False = no such sale.
+    """
+    with conn:
+        cursor = conn.execute(
+            "UPDATE sales SET excluded = ?, excluded_reason = ? WHERE marketplace = ? AND external_id = ?",
+            (0 if reason is None else 1, reason, marketplace, external_id),
+        )
+    return cursor.rowcount == 1

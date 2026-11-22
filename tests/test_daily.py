@@ -264,3 +264,46 @@ def test_fab_bez_souboru_neni_chyba(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "FAB_DIR", tmp_path / "fab")
     assert cli.run_import_fab_daily() == 0
     assert "přeskakuji" in capsys.readouterr().out
+
+
+def test_vylouceny_prodej_se_nepocita(env):
+    env.store(sale("gumroad", "test-nakup", 51, title="Zkušební nákup"))
+    conn = db.connect(env.db)
+    assert db.set_excluded(conn, "gumroad", "test-nakup", "zkušební nákup")
+    conn.close()
+    env.run([daily.Step("gumroad", "Gumroad", ok_step)])
+    _, text = env.last()
+    assert "Zatím žádné prodeje." in text  # ani v měsíčním součtu
+
+    env.store(sale("gumroad", "test-nakup", 51, title="Zkušební nákup"))  # další sync označení nezruší
+    conn = db.connect(env.db)
+    assert conn.execute("SELECT excluded FROM sales WHERE external_id='test-nakup'").fetchone() == (1,)
+    conn.close()
+
+
+def test_novy_vylouceny_neni_v_novych(env):
+    def step():
+        env.store(sale("gumroad", "x", 51))
+        conn = db.connect(env.db)
+        db.set_excluded(conn, "gumroad", "x", "test")
+        conn.close()
+        return 0
+
+    env.run([daily.Step("gumroad", "Gumroad", ok_step)])
+    env.run([daily.Step("gumroad", "Gumroad", step)], now=NOW + timedelta(days=1))
+    assert "bez nových prodejů" in env.last()[0]
+
+
+def test_cli_exclude(tmp_path, monkeypatch, capsys):
+    from sales_tracker import cli
+
+    monkeypatch.setattr(cli, "DB_PATH", tmp_path / "sales.db")
+    conn = db.connect(tmp_path / "sales.db")
+    db.upsert_sales(conn, [sale("gumroad", "g1", 51)])
+    conn.close()
+    assert cli.main(["exclude", "gumroad", "g1", "--reason", "zkušební nákup"]) == 0
+    assert "nepočítá do součtů (zkušební nákup)" in capsys.readouterr().out
+    assert cli.main(["exclude", "gumroad", "g1", "--undo"]) == 0
+    assert cli.main(["exclude", "gumroad", "neni", "--reason", "x"]) == 1
+    with pytest.raises(SystemExit):
+        cli.main(["exclude", "gumroad", "g1"])  # chybí --reason i --undo

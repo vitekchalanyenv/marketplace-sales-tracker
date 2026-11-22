@@ -124,7 +124,8 @@ SALE_COLUMNS = "marketplace, product_title, quantity, net_cents, currency, sold_
 
 def new_sales(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
     return conn.execute(
-        f"SELECT {SALE_COLUMNS} FROM sales WHERE rowid > ? AND status = 'sold' ORDER BY sold_at",
+        f"SELECT {SALE_COLUMNS} FROM sales WHERE rowid > ? AND status = 'sold' AND excluded = 0 "
+        "ORDER BY sold_at",
         (since.max_rowid,),
     ).fetchall()
 
@@ -132,7 +133,7 @@ def new_sales(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
 def new_refunds(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
     rows = conn.execute(
         f"SELECT marketplace, external_id, {SALE_COLUMNS} FROM sales "
-        "WHERE status != 'sold' ORDER BY sold_at"
+        "WHERE status != 'sold' AND excluded = 0 ORDER BY sold_at"
     ).fetchall()
     return [row[2:] for row in rows if (row[0], row[1]) not in since.not_sold]
 
@@ -147,7 +148,7 @@ def month_totals(conn: sqlite3.Connection, today: date) -> list[tuple[str, str, 
     end = datetime(today.year + today.month // 12, today.month % 12 + 1, 1, tzinfo=LOCAL_TZ)
     return conn.execute(
         "SELECT currency, marketplace, SUM(quantity), SUM(net_cents) FROM sales "
-        "WHERE sold_at >= ? AND sold_at < ? AND (status = 'sold' OR quantity < 0) "
+        "WHERE sold_at >= ? AND sold_at < ? AND (status = 'sold' OR quantity < 0) AND excluded = 0 "
         "GROUP BY currency, marketplace ORDER BY currency, marketplace",
         (_utc_text(start), _utc_text(end)),
     ).fetchall()
