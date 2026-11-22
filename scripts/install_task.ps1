@@ -1,6 +1,6 @@
 # Registers the daily agent in Windows Task Scheduler (spec docs/spec/M5-denni-agent.md).
 # Runs every day at 08:00; if the PC was off, as soon as possible after logon (StartWhenAvailable).
-# Only while the user is logged on: the notification must be visible and Chrome needs the user's profile.
+# Only while the user is logged on: Chrome needs the user's profile for Cosmos.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\install_task.ps1 [-At 08:00]
 param([string]$At = "08:00")
 
@@ -17,7 +17,7 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatt
 $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
-    -Principal $principal -Description "Daily sales sync (Gumroad, Cosmos, Fab) with a Windows notification." -Force | Out-Null
+    -Principal $principal -Description "Daily sales sync (Gumroad, Cosmos, Fab) with a morning report e-mail." -Force | Out-Null
 
 Write-Host "Task '$TaskName' registered: daily at $At, catches up after the PC is turned on."
 Write-Host "Run it now: Start-ScheduledTask -TaskName $TaskName"

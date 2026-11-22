@@ -44,8 +44,10 @@ uv run python -m sales_tracker sync cosmos
 uv run python -m sales_tracker import fab                       # every CSV in data/private/fab/
 uv run python -m sales_tracker import fab path/to/report.csv
 
-# daily agent: all sources, log in data/private/logs/, Windows notification on new sales or failures
+# daily agent: all sources, log in data/private/logs/, morning report e-mail via Resend
+# (.env: RESEND_API_KEY, REPORT_EMAIL_TO)
 uv run python -m sales_tracker run daily
+uv run python -m sales_tracker run daily --dry-run                # print the report, send nothing
 powershell -ExecutionPolicy Bypass -File scripts\install_task.ps1   # Task Scheduler, daily 08:00, catches up after boot
 powershell -ExecutionPolicy Bypass -File scripts\uninstall_task.ps1
 

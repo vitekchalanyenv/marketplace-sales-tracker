@@ -12,7 +12,7 @@ import httpx
 from dotenv import load_dotenv
 
 from sales_tracker import catalog as catalog_mod
-from sales_tracker import cosmos, daily, db, fab, gumroad
+from sales_tracker import cosmos, daily, db, emailer, fab, gumroad
 
 DB_PATH = Path("data/private/sales.db")
 CATALOG_PATH = Path("data/private/katalog.yaml")
@@ -313,7 +313,19 @@ def run_import_fab_daily() -> int:
     return import_fab(paths, DB_PATH)
 
 
-def run_daily() -> int:
+def send_report(report: daily.Report) -> None:
+    load_dotenv(Path.cwd() / ".env")
+    emailer.send_email(
+        os.environ.get("RESEND_API_KEY", "").strip(),
+        os.environ.get("REPORT_EMAIL_TO", "").strip(),
+        report.subject,
+        report.text(),
+        report.html(),
+        sender=os.environ.get("REPORT_EMAIL_FROM", "").strip() or emailer.DEFAULT_FROM,
+    )
+
+
+def run_daily(dry_run: bool = False) -> int:
     steps = [
         daily.Step("gumroad", "Gumroad", run_sync_gumroad),
         daily.Step("cosmos", "Cosmos", run_sync_cosmos),
@@ -321,7 +333,7 @@ def run_daily() -> int:
     ]
     return daily.run_daily(
         steps, db_path=DB_PATH, state_path=STATE_PATH, log_dir=LOG_DIR,
-        notify=daily.windows_notify, now=datetime.now(UTC),
+        send=None if dry_run else send_report, now=datetime.now(UTC),
     )
 
 
@@ -337,8 +349,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     imp.add_argument("path", nargs="?", type=Path, help=f"CSV soubor; bez něj všechna CSV z {FAB_DIR}")
     catalog = commands.add_parser("catalog", help="katalog produktů a párování prodejů")
     catalog.add_argument("action", choices=["check", "match"])
-    run = commands.add_parser("run", help="denní agent: stáhne vše a pošle notifikaci")
+    run = commands.add_parser("run", help="denní agent: stáhne vše a pošle ranní souhrn e-mailem")
     run.add_argument("job", choices=["daily"])
+    run.add_argument("--dry-run", action="store_true", help="souhrn jen vypsat, e-mail neposílat")
     args = parser.parse_args(argv)
     if args.command == "sync" and args.login and args.marketplace != "cosmos":
         parser.error("--login je jen pro cosmos")
@@ -357,6 +370,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return catalog_match(CATALOG_PATH, DB_PATH)
 
     if args.command == "run":
-        return run_daily()
+        return run_daily(dry_run=args.dry_run)
 
     return run_sync_gumroad(args.since)

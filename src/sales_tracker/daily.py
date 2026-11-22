@@ -1,18 +1,21 @@
-"""Daily agent (spec M5): run every source, log the output, notify about new sales and failures.
+"""Daily agent (spec M5): run every source, then e-mail a morning report, every day.
 
 Steps are the existing commands (sync gumroad, sync cosmos, import fab). Each runs on its own, so
-one failing source does not stop the others. New sales and refunds are found by comparing the
-database before and after the steps, so the steps themselves need no changes.
+one failing source does not stop the others. "New since the last report" is measured against the
+database state saved when the last report was actually sent, so sales fetched by hand in between
+are reported too and a failed e-mail is repeated the next day. The report is a list of sections,
+so more (wishlists, ...) can be added later.
 """
 
+import html
 import io
 import json
 import sqlite3
 import traceback
 from collections.abc import Callable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
-from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from dataclasses import dataclass, field
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -24,8 +27,11 @@ LOG_KEEP_DAYS = 60
 COSMOS_LOGIN_HINT = "sync cosmos --login"
 MAX_MESSAGE = 160
 LOCAL_TZ = ZoneInfo("Europe/Prague")
-
-Notify = Callable[[str, list[str]], None]
+MARKETPLACE_NAMES = {"gumroad": "Gumroad", "cosmos": "Cosmos", "fab": "Fab", "cgtrader": "CGTrader"}
+MONTHS = (
+    "leden", "únor", "březen", "duben", "květen", "červen",
+    "červenec", "srpen", "září", "říjen", "listopad", "prosinec",
+)
 
 
 @dataclass(frozen=True)
@@ -40,14 +46,48 @@ class StepResult:
     step: Step
     ok: bool
     output: str
-    error: str | None  # short, safe for a notification
+    error: str | None  # short, safe for the e-mail
 
 
 @dataclass(frozen=True)
 class Snapshot:
     max_rowid: int
-    not_sold: set[tuple[str, str]]
+    not_sold: frozenset[tuple[str, str]]
 
+
+@dataclass(frozen=True)
+class Section:
+    title: str
+    lines: list[str]
+
+
+@dataclass
+class Report:
+    subject: str
+    sections: list[Section] = field(default_factory=list)
+
+    def text(self) -> str:
+        parts = []
+        for section in self.sections:
+            parts.append(section.title.upper())
+            parts.extend(f"- {line}" for line in section.lines)
+            parts.append("")
+        return "\n".join(parts).rstrip() + "\n"
+
+    def html(self) -> str:
+        parts = ['<div style="font-family:sans-serif;font-size:14px">']
+        for section in self.sections:
+            parts.append(f"<h3>{html.escape(section.title)}</h3><ul>")
+            parts.extend(f"<li>{html.escape(line)}</li>" for line in section.lines)
+            parts.append("</ul>")
+        parts.append("</div>")
+        return "".join(parts)
+
+
+Send = Callable[[Report], None]
+
+
+# --- steps -----------------------------------------------------------------------------------
 
 def run_step(step: Step) -> StepResult:
     buffer = io.StringIO()
@@ -71,26 +111,53 @@ def _error_message(output: str) -> str:
     return message if len(message) <= MAX_MESSAGE else message[: MAX_MESSAGE - 1] + "…"
 
 
+# --- database queries --------------------------------------------------------------------------
+
 def snapshot(conn: sqlite3.Connection) -> Snapshot:
     max_rowid = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM sales").fetchone()[0]
     rows = conn.execute("SELECT marketplace, external_id FROM sales WHERE status != 'sold'")
-    return Snapshot(max_rowid, {tuple(row) for row in rows})
+    return Snapshot(max_rowid, frozenset(tuple(row) for row in rows))
 
 
-def new_sales(conn: sqlite3.Connection, before: Snapshot) -> list[tuple[str, str, int, int]]:
-    """(currency, marketplace, units, net cents) of sales added since the snapshot."""
+SALE_COLUMNS = "marketplace, product_title, quantity, net_cents, currency, sold_at"
+
+
+def new_sales(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
     return conn.execute(
-        "SELECT currency, marketplace, SUM(quantity), SUM(net_cents) FROM sales "
-        "WHERE rowid > ? AND status = 'sold' GROUP BY currency, marketplace "
-        "ORDER BY currency, marketplace",
-        (before.max_rowid,),
+        f"SELECT {SALE_COLUMNS} FROM sales WHERE rowid > ? AND status = 'sold' ORDER BY sold_at",
+        (since.max_rowid,),
     ).fetchall()
 
 
-def new_refunds(conn: sqlite3.Connection, before: Snapshot) -> int:
-    rows = conn.execute("SELECT marketplace, external_id FROM sales WHERE status != 'sold'")
-    return len({tuple(row) for row in rows} - before.not_sold)
+def new_refunds(conn: sqlite3.Connection, since: Snapshot) -> list[tuple]:
+    rows = conn.execute(
+        f"SELECT marketplace, external_id, {SALE_COLUMNS} FROM sales "
+        "WHERE status != 'sold' ORDER BY sold_at"
+    ).fetchall()
+    return [row[2:] for row in rows if (row[0], row[1]) not in since.not_sold]
 
+
+def month_totals(conn: sqlite3.Connection, today: date) -> list[tuple[str, str, int, int]]:
+    """(currency, marketplace, units, net cents) for the local month of `today`.
+
+    Refunds: Fab stores them as separate negative rows (counted, so they subtract); Gumroad and
+    Cosmos change the sale's status (not counted).
+    """
+    start = datetime(today.year, today.month, 1, tzinfo=LOCAL_TZ)
+    end = datetime(today.year + today.month // 12, today.month % 12 + 1, 1, tzinfo=LOCAL_TZ)
+    return conn.execute(
+        "SELECT currency, marketplace, SUM(quantity), SUM(net_cents) FROM sales "
+        "WHERE sold_at >= ? AND sold_at < ? AND (status = 'sold' OR quantity < 0) "
+        "GROUP BY currency, marketplace ORDER BY currency, marketplace",
+        (_utc_text(start), _utc_text(end)),
+    ).fetchall()
+
+
+def _utc_text(moment: datetime) -> str:
+    return moment.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# --- formatting --------------------------------------------------------------------------------
 
 def format_money(cents: int, currency: str) -> str:
     sign = "-" if cents < 0 else ""
@@ -105,25 +172,99 @@ def _plural_sales(n: int) -> str:
 
 
 def _plural_days(n: int) -> str:
-    if n == 1:
-        return "1 dnem"
-    return f"{n} dny"
+    return "1 dnem" if n == 1 else f"{n} dny"
 
 
-def sales_lines(rows: list[tuple[str, str, int, int]]) -> list[str]:
-    by_currency: dict[str, list[tuple[str, int, int]]] = {}
-    for currency, marketplace, units, net in rows:
-        by_currency.setdefault(currency, []).append((marketplace, units, net))
-    lines = []
-    for currency, parts in by_currency.items():
-        units = sum(p[1] for p in parts)
-        net = sum(p[2] for p in parts)
-        detail = ", ".join(
-            f"{m.capitalize()} {u}" for m, u, _ in sorted(parts, key=lambda p: (-p[1], p[0]))
-        )
-        lines.append(f"{_plural_sales(units)}, čistě {format_money(net, currency)} ({detail})")
-    return lines
+def _local(moment: datetime | str) -> datetime:
+    if isinstance(moment, str):
+        moment = datetime.fromisoformat(moment)
+    return moment.astimezone(LOCAL_TZ)
 
+
+def _when(moment: datetime | str) -> str:
+    local = _local(moment)
+    return f"{local.day}. {local.month}. {local:%H:%M}"
+
+
+def _name(marketplace: str) -> str:
+    return MARKETPLACE_NAMES.get(marketplace, marketplace)
+
+
+def _sale_line(row: tuple) -> str:
+    marketplace, title, quantity, net, currency, sold_at = row
+    return (
+        f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – "
+        f"čistě {format_money(net, currency)} ({_when(sold_at)})"
+    )
+
+
+def _subject(day: date, sales: list[tuple], failed: list[StepResult]) -> str:
+    parts = []
+    if failed:
+        parts.append("⚠ chyba: " + ", ".join(r.step.name for r in failed))
+    if sales:
+        units = sum(row[2] for row in sales)
+        currencies = {row[4] for row in sales}
+        text = _plural_sales(units)
+        if len(currencies) == 1:
+            text += f", čistě {format_money(sum(row[3] for row in sales), currencies.pop())}"
+        parts.append(text)
+    else:
+        parts.append("bez nových prodejů")
+    return f"Prodeje {day.day}. {day.month}.: " + " · ".join(parts)
+
+
+def build_report(
+    *,
+    day: date,
+    results: list[StepResult],
+    sales: list[tuple],
+    refunds: list[tuple],
+    month: list[tuple[str, str, int, int]],
+    state: dict,
+    now: datetime,
+) -> Report:
+    failed = [r for r in results if not r.ok]
+    report = Report(_subject(day, sales, failed))
+
+    report.sections.append(Section(
+        "Nové prodeje od minulého souhrnu",
+        [_sale_line(row) for row in sales] or ["Žádné nové prodeje."],
+    ))
+    if refunds:
+        report.sections.append(Section("Refundy", [_sale_line(row) for row in refunds]))
+
+    month_lines = []
+    totals: dict[str, int] = {}
+    for currency, marketplace, units, net in month:
+        month_lines.append(f"{_name(marketplace)}: {units} ks, čistě {format_money(net, currency)}")
+        totals[currency] = totals.get(currency, 0) + net
+    for currency, net in totals.items():
+        month_lines.append(f"Celkem: čistě {format_money(net, currency)}")
+    report.sections.append(Section(
+        f"Tento měsíc ({MONTHS[day.month - 1]} {day.year})",
+        month_lines or ["Zatím žádné prodeje."],
+    ))
+
+    status_lines = []
+    for result in results:
+        if result.ok:
+            status_lines.append(f"{result.step.name}: ok")
+            continue
+        line = f"{result.step.name}: CHYBA – {result.error}"
+        last = state["last_success"].get(result.step.key) if result.step.key in WATCHED else None
+        if last is not None:
+            days = (now - datetime.fromisoformat(last)).days
+            if days >= STALE_DAYS:
+                line += f" (naposledy staženo před {_plural_days(days)})"
+            else:
+                line += f" (naposledy staženo {_when(last)})"
+        status_lines.append(line)
+    report.sections.append(Section("Stav zdrojů", status_lines))
+    return report
+
+
+# --- state and log -----------------------------------------------------------------------------
 
 def _load_state(path: Path) -> dict:
     try:
@@ -134,11 +275,15 @@ def _load_state(path: Path) -> dict:
     return state
 
 
-def _days_since(state: dict, key: str, now: datetime) -> int | None:
-    value = state["last_success"].get(key)
-    if value is None:
+def _reported(state: dict) -> Snapshot | None:
+    saved = state.get("reported")
+    if not isinstance(saved, dict):
         return None
-    return (now - datetime.fromisoformat(value)).days
+    return Snapshot(int(saved["max_rowid"]), frozenset(tuple(k) for k in saved["not_sold"]))
+
+
+def _save_reported(state: dict, snap: Snapshot) -> None:
+    state["reported"] = {"max_rowid": snap.max_rowid, "not_sold": sorted(list(k) for k in snap.not_sold)}
 
 
 def _prune_logs(log_dir: Path, today: date) -> None:
@@ -152,72 +297,75 @@ def _prune_logs(log_dir: Path, today: date) -> None:
             path.unlink()
 
 
+# --- the run -----------------------------------------------------------------------------------
+
 def run_daily(
     steps: Sequence[Step],
     *,
     db_path: Path,
     state_path: Path,
     log_dir: Path,
-    notify: Notify,
+    send: Send | None,
     now: datetime,
 ) -> int:
+    """Run all steps and send the report. send=None is a dry run: print only, change no state."""
+    state = _load_state(state_path)
     conn = db.connect(db_path)
     try:
-        before = snapshot(conn)
+        since = _reported(state) or snapshot(conn)  # first run: do not report the whole history
     finally:
         conn.close()
 
     results = [run_step(step) for step in steps]
+    day = _local(now).date()
 
     conn = db.connect(db_path)
     try:
-        lines = sales_lines(new_sales(conn, before))
-        refunds = new_refunds(conn, before)
+        sales = new_sales(conn, since)
+        refunds = new_refunds(conn, since)
+        month = month_totals(conn, day)
+        after = snapshot(conn)
     finally:
         conn.close()
-    if refunds:
-        lines.append("1 refund" if refunds == 1 else f"refundů: {refunds}")
 
-    state = _load_state(state_path)
-    for result in results:
-        if result.ok:
-            if result.step.key in WATCHED:
-                state["last_success"][result.step.key] = now.isoformat()
-            continue
-        message = f"{result.step.name}: {result.error}"
-        days = _days_since(state, result.step.key, now) if result.step.key in WATCHED else None
-        if days is not None and days >= STALE_DAYS:
-            message += f" (naposledy staženo před {_plural_days(days)})"
-        lines.append(message)
-    state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    report = build_report(
+        day=day, results=results, sales=sales, refunds=refunds, month=month, state=state, now=now,
+    )
 
-    failed = any(not r.ok for r in results)
     log = [f"=== {now.isoformat()} ==="]
     for result in results:
         log.append(f"--- {result.step.name}: {'ok' if result.ok else 'CHYBA'} ---")
         log.append(result.output.rstrip())
-    log.append("--- shrnutí ---")
-    log.extend(lines or ["nic nového"])
+    log.append(f"--- souhrn: {report.subject} ---")
+    log.append(report.text().rstrip())
 
-    if lines:
-        title = "Prodeje: něco selhalo" if failed else "Prodeje: nové prodeje"
+    sent = False
+    if send is None:
+        log.append("(zkušební běh, e-mail se neposlal)")
+    else:
         try:
-            notify(title, lines)
-        except Exception as exc:  # noqa: BLE001 – the log is the fallback
-            log.append(f"notifikace se nezobrazila: {type(exc).__name__}: {exc}")
+            send(report)
+            sent = True
+            log.append("e-mail odeslán")
+        except Exception as exc:  # noqa: BLE001 – the log is the fallback; next report repeats
+            log.append(f"E-MAIL SE NEPOSLAL: {exc}")
+
+    if send is not None:
+        for result in results:
+            if result.ok and result.step.key in WATCHED:
+                state["last_success"][result.step.key] = now.isoformat()
+        if sent:
+            _save_reported(state, after)
+        elif "reported" not in state:
+            _save_reported(state, since)  # anchor the first baseline, or the next run would skip these sales
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    today = now.astimezone(LOCAL_TZ).date()
-    with (log_dir / f"daily_{today.isoformat()}.log").open("a", encoding="utf-8") as f:
+    with (log_dir / f"daily_{day.isoformat()}.log").open("a", encoding="utf-8") as f:
         f.write("\n".join(log) + "\n\n")
-    _prune_logs(log_dir, today)
+    _prune_logs(log_dir, day)
 
     print("\n".join(log))
-    return 1 if failed else 0
-
-
-def windows_notify(title: str, lines: list[str]) -> None:
-    from windows_toasts import Toast, WindowsToaster  # Windows only, imported when the agent runs
-
-    WindowsToaster("Prodeje").show_toast(Toast(text_fields=[title, "\n".join(lines)]))
+    failed = any(not r.ok for r in results)
+    return 1 if failed or (send is not None and not sent) else 0
