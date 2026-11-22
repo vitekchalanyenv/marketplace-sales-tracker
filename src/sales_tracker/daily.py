@@ -208,9 +208,11 @@ def _local(moment: datetime | str) -> datetime:
     return moment.astimezone(LOCAL_TZ)
 
 
-def _when(moment: datetime | str) -> str:
+def _when(moment: datetime | str, year: int | None = None) -> str:
+    """'21. 11. 23:57'; with the year when it differs from `year` (the report's year)."""
     local = _local(moment)
-    return f"{local.day}. {local.month}. {local:%H:%M}"
+    shown_year = f" {local.year}" if year is not None and local.year != year else ""
+    return f"{local.day}. {local.month}.{shown_year} {local:%H:%M}"
 
 
 def _name(marketplace: str) -> str:
@@ -223,12 +225,17 @@ def _approx_czk(haler: int | None, currency: str) -> str:
     return f" (≈ {format_money(haler, 'Kč')})"
 
 
-def _sale_line(row: tuple, czk=None) -> str:
+def _sale_line(row: tuple, czk=None, year: int | None = None, refund: bool = False) -> str:
+    """One sale; a refund always shows a negative amount (Fab stores refunds as negative rows,
+    Gumroad and Cosmos as the original sale with a refund status)."""
     marketplace, title, quantity, net, currency, sold_at = row
+    if refund:
+        quantity, net = abs(quantity), -abs(net)
     haler = czk(net, currency, sold_at) if czk else None
+    label = "vráceno" if refund else "čistě"
     return (
         f"{_name(marketplace)} – {title or '(bez názvu)'} – {quantity}× – "
-        f"čistě {format_money(net, currency)}{_approx_czk(haler, currency)} ({_when(sold_at)})"
+        f"{label} {format_money(net, currency)}{_approx_czk(haler, currency)} ({_when(sold_at, year)})"
     )
 
 
@@ -267,10 +274,12 @@ def build_report(
 
     report.sections.append(Section(
         "Nové prodeje od minulého souhrnu",
-        [_sale_line(row, czk) for row in sales] or ["Žádné nové prodeje."],
+        [_sale_line(row, czk, day.year) for row in sales] or ["Žádné nové prodeje."],
     ))
     if refunds:
-        report.sections.append(Section("Refundy", [_sale_line(row, czk) for row in refunds]))
+        report.sections.append(Section(
+            "Refundy", [_sale_line(row, czk, day.year, refund=True) for row in refunds]
+        ))
 
     month_lines = []
     totals: dict[str, int] = {}

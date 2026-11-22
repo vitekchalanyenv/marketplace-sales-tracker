@@ -31,6 +31,7 @@ Real sales data never leaves the local machine. The repository contains only **s
 ```powershell
 uv sync
 uv run pytest
+uv run python -m sales_tracker demo   # whole pipeline on made-up data, no accounts or network
 
 # copy .env.example to .env and fill in GUMROAD_ACCESS_TOKEN, then:
 uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days

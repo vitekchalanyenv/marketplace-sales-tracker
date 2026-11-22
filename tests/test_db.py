@@ -68,7 +68,7 @@ def test_cas_a_castky_v_db(tmp_path, all_records):
     row = conn.execute(
         "SELECT sold_at, gross_cents, net_cents, currency, typeof(gross_cents) FROM sales"
     ).fetchone()
-    assert row == ("2026-10-20T12:15:00Z", 1499, 1226, "USD", "integer")
+    assert row == ("2026-01-21T12:15:00Z", 1499, 1226, "USD", "integer")
 
 
 def test_raw_se_ulozi_jako_json(tmp_path, all_records):

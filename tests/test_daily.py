@@ -351,3 +351,16 @@ def test_kurz_nedostupny(env):
     assert "čistě 10,00 USD (22. 11. 03:00)" in text  # bez Kč, ale prodej tam je
     assert "Kurz ČNB: nedostupný (ČNB není dostupná (ConnectError)), částky v Kč chybí" in text
     assert "Celkem ve všech měnách" not in text
+
+
+def test_refund_zaporne_a_rok(env):
+    old = datetime(2025, 3, 29, 13, 30, tzinfo=UTC)
+    env.run([daily.Step("cosmos", "Cosmos", env.step(sale("cosmos", "c1", 1000, sold_at=old, title="Chata")))])
+    assert "Chata – 1× – čistě 10,00 USD (29. 3. 2025 14:30)" in env.last()[1]  # jiný rok → s rokem
+    env.run([daily.Step("cosmos", "Cosmos", env.step(
+        sale("cosmos", "c1", 1000, sold_at=old, title="Chata", status=Status.REFUNDED),
+        sale("fab", "f-ref", -880, quantity=-1, status=Status.REFUNDED, title="Fab chata"),
+    ))], now=NOW + timedelta(days=1))
+    text = env.last()[1]
+    assert "Cosmos – Chata – 1× – vráceno -10,00 USD (29. 3. 2025 14:30)" in text
+    assert "Fab – Fab chata – 1× – vráceno -8,80 USD (22. 11. 03:00)" in text

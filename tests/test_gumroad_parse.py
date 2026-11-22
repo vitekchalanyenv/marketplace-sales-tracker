@@ -20,7 +20,7 @@ def test_bezny_prodej_se_prevede_na_spolecny_model(all_records):
     assert sale.external_id == "SAMPLE-aaaaaaaaaaaaaaaaaaaa=="
     assert sale.product_title == "Sample Medieval Village Environment"
     assert sale.product_ref == "SAMPLE-prod-medieval-village=="
-    assert sale.sold_at == datetime(2026, 10, 20, 12, 15, tzinfo=UTC)
+    assert sale.sold_at == datetime(2026, 1, 21, 12, 15, tzinfo=UTC)
     assert sale.gross_cents == 1499
     assert sale.net_cents == 1499 - 273  # price − gumroad_fee
     assert sale.currency == "USD"
@@ -93,8 +93,8 @@ def test_bez_poplatku_je_cisty_prijem_neznamy(all_records):
 
 def test_cas_s_jinou_zonou_se_prevede_na_utc(all_records):
     record = by_order(all_records, 900001)
-    record["created_at"] = "2026-10-20T14:15:00+02:00"
-    assert parse_sale(record).sold_at == datetime(2026, 10, 20, 12, 15, tzinfo=UTC)
+    record["created_at"] = "2026-01-21T14:15:00+02:00"
+    assert parse_sale(record).sold_at == datetime(2026, 1, 21, 12, 15, tzinfo=UTC)
 
 
 @pytest.mark.parametrize(
@@ -104,7 +104,7 @@ def test_cas_s_jinou_zonou_se_prevede_na_utc(all_records):
         ({"id": ""}, "id"),
         ({"created_at": None}, "created_at"),
         ({"created_at": "včera"}, "created_at"),
-        ({"created_at": "2026-10-20T12:15:00"}, "created_at"),  # bez časové zóny
+        ({"created_at": "2026-01-21T12:15:00"}, "created_at"),  # bez časové zóny
         ({"price": None}, "price"),
         ({"price": "14.99"}, "price"),
         ({"price": 14.99}, "price"),  # float nebrat
