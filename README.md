@@ -72,7 +72,8 @@ database but out of every total).
 ## Claude with a safety net
 
 The weekly commentary is the one place an LLM is in the loop, so it is built to fail safe. **Claude never writes a
-number, an order or a cause.**
+number, an order or a cause.** The full story, including the first version that failed review, is in a one-page
+write-up: [Letting an LLM comment on money without letting it make up numbers](docs/writeup.md).
 
 1. **Code computes every number** for last week (by marketplace, by product, vs the week before, in CZK) and turns
    it into named placeholders: `{cosmos_kc}` = "713,61 Kč", `{smer_prijmu}` = "klesl" (fell), `{zmena_procent}` =
