@@ -40,7 +40,8 @@
   20 prodejů, stav zdrojů, filtry období a marketplace; USD/EUR i Kč. Výpočty v `overview.py`, `demo --dashboard`,
   screenshot v README. Testy prošly (361). **Ověřeno na skutečných datech:** součty tohoto měsíce po marketplacech
   (kusy, měna, Kč) shodné s ranním e-mailem, kurzy ČNB pro starší dny doplněny bez chyby, stránka se vykreslí.
-  Čeká na Vítkovu kontrolu v prohlížeči.
+  Vítek přehled zkontroloval v prohlížeči (funguje). Doplněna historie: Fab report od začátku roku (součty sedí
+  s CSV), CGTrader po měsících z reportů v e-mailu (report „Item downloads“ je jen stažení, import ho přeskočí).
 
 ## Rozpracováno
 

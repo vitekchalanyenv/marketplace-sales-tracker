@@ -2,7 +2,7 @@
 
 **Stav:** schváleno Vítkem 2026-11-23. Napsáno, testy prošly; ověřeno na skutečných datech (součty tento měsíc
 po marketplacech v kusech, měně i Kč sedí s výpočtem ranního e-mailu, kurzy doplněny bez chyby, stránka se vykreslí).
-Zbývá Vítkova vlastní kontrola v prohlížeči.
+Vítek zkontroloval v prohlížeči 2026-11-23.
 
 ## Cíl
 
