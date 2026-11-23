@@ -286,10 +286,14 @@ def _new_totals(sales: list[tuple], czk) -> list[str]:
     ]
 
 
-def _subject(day: date, sales: list[tuple], failed: list[StepResult], totals: list[str]) -> str:
+def _subject(
+    day: date, sales: list[tuple], failed: list[StepResult], totals: list[str], stale: Sequence[str] = ()
+) -> str:
     parts = []
     if failed:
         parts.append("⚠ chyba: " + ", ".join(r.step.name for r in failed))
+    if stale:
+        parts.append("⚠ starý report: " + ", ".join(stale))
     if sales:
         text = _plural_sales(sum(row[2] for row in sales))
         if len(totals) == 1:  # same text as the total line in the body
@@ -313,12 +317,21 @@ def build_report(
     month_czk: dict[tuple[str, str], int | None] | None = None,
     weekly_section: Section | None = None,
     product_name=None,
+    monthly_section: Section | None = None,
+    manual=None,
 ) -> Report:
-    """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK."""
+    """czk / month_czk: CZK conversion (CzkConverter, haléře per (currency, marketplace)); None = no CZK.
+    manual: manual.ManualStatus per hand-uploaded source (spec M5c), shown instead of a plain "ok"."""
     failed = [r for r in results if not r.ok]
+    manual_by_key = {m.key: m for m in manual or []}
+    ok_keys = {r.step.key for r in results if r.ok}
+    stale = [_name(m.key) for m in manual or [] if m.in_subject and m.key in ok_keys]
     totals_new = _new_totals(sales, czk)
-    report = Report(_subject(day, sales, failed, totals_new))
+    report = Report(_subject(day, sales, failed, totals_new, stale))
     month_czk = month_czk or {}
+    if monthly_section is not None:
+        report.subject += " · měsíční shrnutí"
+        report.sections.append(monthly_section)
     if weekly_section is not None:
         report.subject += " · týdenní shrnutí"
         report.sections.append(weekly_section)
@@ -364,7 +377,8 @@ def build_report(
     status_lines = []
     for result in results:
         if result.ok:
-            status_lines.append(f"{result.step.name}: ok")
+            extra = manual_by_key.get(result.step.key)
+            status_lines.append(f"{result.step.name}: {extra.text if extra else 'ok'}")
             continue
         line = f"{result.step.name}: CHYBA – {result.error}"
         last = state["last_success"].get(result.step.key) if result.step.key in WATCHED else None
@@ -427,11 +441,15 @@ def run_daily(
     make_rates=None,
     weekly_config: WeeklyConfig | None = None,
     product_name: Callable[[str], str] | None = None,
+    monthly: bool = False,
+    manual_dirs: tuple[Path, Path] | None = None,
 ) -> int:
     """Run all steps and send the report. send=None is a dry run: print only, change no state.
 
     make_rates(conn, today) -> fx.Rates for CZK amounts (None = original currency only);
     product_name(key) -> catalog name, so one product has one name everywhere in the report.
+    monthly: add the monthly section to the first report of each month (spec M5c);
+    manual_dirs: (Fab folder, CGTrader folder) to say how far the hand-uploaded reports reach.
     """
     if product_name is None and weekly_config is not None:
         product_name = weekly_config.product_name
@@ -475,10 +493,23 @@ def run_daily(
                 intro=comment.text,
                 intro_label=weekly_config.label,
             )  # rejected attempts go to the log only
+        monthly_section = None
+        month_key = None
+        if monthly:
+            from sales_tracker import monthly as monthly_mod
+
+            month_key = monthly_mod.key(day)
+            if state.get("monthly_sent_for") != month_key:
+                monthly_section = monthly_mod.section(conn, czk, day, product_name or (lambda k: k))
+        manual = None
+        if manual_dirs is not None:
+            from sales_tracker import manual as manual_mod
+
+            manual = manual_mod.statuses(conn, day, *manual_dirs)
         report = build_report(
             day=day, results=results, sales=sales, refunds=refunds, month=month, state=state,
             now=now, czk=czk, month_czk=month_czk, weekly_section=weekly_section,
-            product_name=product_name,
+            product_name=product_name, monthly_section=monthly_section, manual=manual,
         )
     finally:
         conn.close()
@@ -511,6 +542,8 @@ def run_daily(
             _save_reported(state, after)
             if weekly_section is not None:
                 state["weekly_sent_for"] = week_key
+            if monthly_section is not None:
+                state["monthly_sent_for"] = month_key
         elif "reported" not in state:
             _save_reported(state, since)  # anchor the first baseline, or the next run would skip these sales
         state_path.parent.mkdir(parents=True, exist_ok=True)

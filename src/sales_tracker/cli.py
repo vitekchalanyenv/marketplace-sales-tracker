@@ -503,6 +503,7 @@ def run_daily(dry_run: bool = False, with_claude: bool = False) -> int:
         send=None if dry_run else send_report, now=datetime.now(UTC),
         make_rates=lambda conn, today: fx.Rates(conn, today),
         weekly_config=weekly_config(dry_run, with_claude),
+        monthly=True, manual_dirs=(FAB_DIR, CGTRADER_DIR),
     )
 
 

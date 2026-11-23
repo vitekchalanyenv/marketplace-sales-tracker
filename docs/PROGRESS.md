@@ -42,6 +42,10 @@
   (kusy, měna, Kč) shodné s ranním e-mailem, kurzy ČNB pro starší dny doplněny bez chyby, stránka se vykreslí.
   Vítek přehled zkontroloval v prohlížeči (funguje). Doplněna historie: Fab report od začátku roku (součty sedí
   s CSV), CGTrader po měsících z reportů v e-mailu (report „Item downloads“ je jen stažení, import ho přeskočí).
+- 2026-11-23 – M5c (spec `docs/spec/M5c-rucni-zdroje-mesic.md`): ranní e-mail ukazuje, do kdy sahají ruční reporty
+  (Fab podle názvu souboru, varování po 7 dnech i v předmětu; CGTrader podle měsíců v reportech, varování po 10. dni
+  bez reportu za minulý měsíc) a první e-mail měsíce má sekci „Minulý měsíc“ (jen čísla, stejné výpočty jako
+  přehled). Testy prošly. Ověřeno na skutečných datech bez odeslání; ostrý e-mail s měsíční sekcí 1. 12.
 
 ## Rozpracováno
 

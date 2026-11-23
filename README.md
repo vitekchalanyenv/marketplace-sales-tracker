@@ -6,7 +6,9 @@
 on **Gumroad, Fab, CGTrader and Cosmos (Leartes)** — each of them exposes sales in a completely different way.
 
 Every morning at 8:00 it pulls sales from all four, stores them in one local database, matches the same product
-across platforms, converts totals to CZK at the Czech National Bank rate and e-mails a summary. On Mondays Claude adds
+across platforms, converts totals to CZK at the Czech National Bank rate and e-mails a summary. The sources I upload
+by hand (Fab, CGTrader) are watched too: the e-mail says how far their reports reach and warns when one is missing.
+The first e-mail of a month adds a monthly summary (numbers only). On Mondays Claude adds
 a short commentary on the past week — and **a deterministic check rejects it if it contains a single number that is
 not in the data**.
 
