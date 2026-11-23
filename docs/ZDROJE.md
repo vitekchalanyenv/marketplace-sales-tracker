@@ -147,3 +147,15 @@ a `app/controllers/api/v2/sales_controller.rb` + `Purchase#as_json` v `app/model
     `GET /api/internal/profile/sales?resource=available_months`. Přihlášení cookie z prohlížeče.
   - **Podíl prodejce je proměnlivý** (payout rate podle objemu prodejů za období, mění se), takže `net` se nedá počítat
     pevnou sazbou jako u Fabu – bere se `Final earnings`.
+
+## Wishlisty (průzkum 2026-11-23, jen veřejné zdroje, nic nepřihlášeno)
+
+- **Gumroad:** wishlisty jsou funkce kupujících (veřejné seznamy, sledující). V API ani v otevřeném zdrojovém kódu
+  (`app/models/wishlist.rb`, `wishlist_product.rb`) jsme nenašli počet na produkt ani upozornění prodejci.
+  Dokumentaci API se nepodařilo načíst celou, takže neověřeno úplně.
+- **Fab:** wishlisty kupujících od 25. 2. 2025. Podle prodejců na fóru Epicu (listopad 2025) prodejce počet
+  wishlistů nevidí. Veřejné API pro prodejce není.
+- **CGTrader:** v dokumentaci API (`api.cgtrader.com/docs`) není nic o oblíbených, lajcích ani zobrazeních. Placený
+  program Analytics (závazek 12 měsíců) nabízí zobrazení a konverze, wishlisty nezmiňuje. Co skutečně vrací
+  `GET /v1/models/:id`, se ověří jedním requestem, až bude API schválené.
+- **Cosmos:** na veřejném webu žádná funkce wishlistu ani statistiky pro prodejce. Rozhodne až pohled do účtu.
