@@ -45,7 +45,9 @@
 - 2026-11-23 – M5c (spec `docs/spec/M5c-rucni-zdroje-mesic.md`): ranní e-mail ukazuje, do kdy sahají ruční reporty
   (Fab podle názvu souboru, varování po 7 dnech i v předmětu; CGTrader podle měsíců v reportech, varování po 10. dni
   bez reportu za minulý měsíc) a první e-mail měsíce má sekci „Minulý měsíc“ (jen čísla, stejné výpočty jako
-  přehled). Testy prošly. Ověřeno na skutečných datech bez odeslání; ostrý e-mail s měsíční sekcí 1. 12.
+  přehled). Testy prošly (376). Ověřeno na skutečných datech bez odeslání; ostrý e-mail s měsíční sekcí 1. 12.
+- 2026-11-23 – M7 write-up `docs/writeup.md` (kontrola čísel v komentáři Claude), odkaz z README. Průzkum wishlistů
+  v `ZDROJE.md`: prodejce je nikde nevidí přes API ani export, odloženo (rozhodnutí Vítka).
 
 ## Rozpracováno
 
@@ -53,13 +55,15 @@
 
 ## Čeká na Vítka
 
-- Nic. Přečíst README (psané jeho hlasem) a potvrdit, že sedí.
+- Přečíst README (psané jeho hlasem) a write-up a potvrdit, že sedí.
+- Úklid souborů se skutečnými daty mimo repo (viz HANDOFF).
 
 ## Otevřené otázky / neověřeno
 
 - Ranní e-mail při vypršeném přihlášení do Cosmosu; doběhnutí po úplném vypnutí PC (po spánku ověřeno).
 - Cosmos: formát refundu (`refund_details`) – zatím žádný nebyl; jak dlouho vydrží přihlášení.
-- Další sekce souhrnu (wishlisty), M7 portfolio.
+- První ostrý e-mail s řádky ručních zdrojů (24. 11.) a s měsíční sekcí (1. 12.).
+- Video do portfolia: zatím ne (rozhodnutí Vítka); wishlisty odloženy.
 
 ## Známé problémy
 
