@@ -22,7 +22,19 @@ No accounts, no network, no `.env` — the whole pipeline on the synthetic data 
 ```powershell
 uv sync
 uv run python -m sales_tracker demo
+uv run python -m sales_tracker demo --dashboard   # ...and open the dashboard on the same data
 ```
+
+## The dashboard
+
+The e-mail says *what is new*; the dashboard says *where I stand*. A local Streamlit page over the same database:
+this month / last month / this year, income per month by marketplace, every product across all platforms (this is
+where the catalog matching pays off) and the latest sales, filtered by period and marketplace. Amounts are shown in
+the original currency and in CZK; a CZK total with a missing rate is never shown as if it were complete. It listens
+on `127.0.0.1` only, with Streamlit's usage statistics off, and all numbers come from one tested module
+([`overview.py`](src/sales_tracker/overview.py)) that agrees with the e-mail to the cent.
+
+<img src="docs/img/dashboard.png" alt="Dashboard on made-up demo data" width="700">
 
 ## How it works
 
@@ -36,6 +48,7 @@ flowchart LR
     N[normalize to one Sale model<br/>money in integer cents, time in UTC] --> DB[(SQLite<br/>idempotent upsert)]
     K[catalog.yaml<br/>same product, different names] --> DB
     DB --> R[morning report<br/>code computes every number]
+    DB --> D[dashboard<br/>Streamlit, local only]
     X[ČNB exchange rates] --> R
     R --> W{Monday?}
     W -->|yes| CL[Claude writes commentary] --> V[number check<br/>reject if any number<br/>is not in the data]
@@ -154,6 +167,7 @@ holds only synthetic data. Secrets are in `.env` (see [`.env.example`](.env.exam
 uv sync
 uv run pytest
 uv run python -m sales_tracker demo   # whole pipeline on made-up data, no accounts or network
+uv run python -m sales_tracker dashboard              # dashboard in the browser (local only), Ctrl+C to stop
 
 # copy .env.example to .env and fill in GUMROAD_ACCESS_TOKEN, then:
 uv run python -m sales_tracker sync gumroad                     # first run: everything, then last 30 days
@@ -186,8 +200,9 @@ uv run python -m sales_tracker exclude gumroad <sale id> --reason "test purchase
 uv run python -m sales_tracker catalog check   # validate + list unmatched sales with ready-to-paste YAML
 uv run python -m sales_tracker catalog match   # re-assign every sale to a product
 
-# regenerate the README screenshot from the demo
+# regenerate the README screenshots from the demo
 uv run python scripts/demo_screenshot.py
+uv run python scripts/dashboard_screenshot.py
 ```
 
 Specs for every milestone are in [`docs/spec/`](docs/spec/), progress in [`docs/PROGRESS.md`](docs/PROGRESS.md)

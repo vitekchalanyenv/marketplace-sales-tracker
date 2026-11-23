@@ -35,6 +35,12 @@
   (`scripts/eval_commentary.py`, 20 běhů na demo týdnu): 20× napoprvé, 0× po opakování, 0× vzdáno. Slabina je obsah:
   komentář opakoval skoro všechna čísla a špatná shoda („se prodalo 4 kusy“). Prompt v2 (vybrat 1–2 věci, neopakovat
   přehled, pozor na shodu): 20× napoprvé, značek s čísly 12,8 → 0,9, riziko shody 17 → 0 z 20 (`docs/eval/`).
+- 2026-11-23 – M6 přehled (spec `docs/spec/M6-prehled.md`): `dashboard` (Streamlit, jen 127.0.0.1, bez statistik),
+  čísla za tento / minulý měsíc / letos, graf po měsících podle marketplace, produkty napříč platformami, posledních
+  20 prodejů, stav zdrojů, filtry období a marketplace; USD/EUR i Kč. Výpočty v `overview.py`, `demo --dashboard`,
+  screenshot v README. Testy prošly (361). **Ověřeno na skutečných datech:** součty tohoto měsíce po marketplacech
+  (kusy, měna, Kč) shodné s ranním e-mailem, kurzy ČNB pro starší dny doplněny bez chyby, stránka se vykreslí.
+  Čeká na Vítkovu kontrolu v prohlížeči.
 
 ## Rozpracováno
 
@@ -48,7 +54,7 @@
 
 - Ranní e-mail při vypršeném přihlášení do Cosmosu; doběhnutí po úplném vypnutí PC (po spánku ověřeno).
 - Cosmos: formát refundu (`refund_details`) – zatím žádný nebyl; jak dlouho vydrží přihlášení.
-- Další sekce souhrnu (wishlisty), M6 přehled (dashboard), M7 portfolio.
+- Další sekce souhrnu (wishlisty), M7 portfolio.
 
 ## Známé problémy
 

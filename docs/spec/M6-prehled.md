@@ -1,6 +1,8 @@
 # Specifikace M6: přehled prodejů (dashboard)
 
-**Stav:** návrh, čeká na schválení Vítkem.
+**Stav:** schváleno Vítkem 2026-11-23. Napsáno, testy prošly; ověřeno na skutečných datech (součty tento měsíc
+po marketplacech v kusech, měně i Kč sedí s výpočtem ranního e-mailu, kurzy doplněny bez chyby, stránka se vykreslí).
+Zbývá Vítkova vlastní kontrola v prohlížeči.
 
 ## Cíl
 
@@ -17,8 +19,11 @@ v čase. Ranní e-mail říká „co je nového“, přehled říká „jak si s
 
 - `uv run python -m sales_tracker dashboard` spustí Streamlit a otevře prohlížeč na `localhost`.
   Běží, dokud je otevřený terminál (Ctrl+C ukončí).
-- Server poslouchá **jen na 127.0.0.1** a bez odesílání statistik o používání Streamlitu. Přesné volby
-  (`server.address`, `browser.gatherUsageStats`) ověřím v dokumentaci Streamlitu, ne z paměti.
+- Server poslouchá **jen na 127.0.0.1** a bez odesílání statistik o používání Streamlitu (`server.address`,
+  `browser.gatherUsageStats`, ověřeno v nainstalovaném Streamlitu 1.67: statistiky jsou ve výchozím stavu zapnuté).
+  Bez tlačítka „Deploy“ (`client.toolbarMode minimal`).
+- Streamlit běží `server.headless` a prohlížeč otevře náš příkaz: jinak se při prvním spuštění v terminálu ptá na
+  e-mail pro newsletter a čeká na odpověď (zjištěno při ostrém spuštění).
 - Čte `data/private/sales.db`. Prodeje **jen čte**, nic nemění. Jediný zápis jsou chybějící kurzy ČNB do
   `fx_rates` (stejná cache jako u e-mailu).
 - `uv run python -m sales_tracker demo --dashboard` spustí totéž na vymyšlených datech z `data/sample/`
@@ -62,7 +67,9 @@ v čase. Ranní e-mail říká „co je nového“, přehled říká „jak si s
    marketplace.
 5. **Posledních 20 prodejů** (ve filtru): datum, produkt, marketplace, kusy, čistě v původní měně a v Kč.
    **Stav zdrojů:** u každého marketplace datum posledního prodeje v DB a kdy proběhla poslední úspěšná
-   aktualizace (podle logu denního agenta). Když starší než 3 dny, zvýraznit (stejné pravidlo jako v e-mailu).
+   aktualizace: u Gumroadu a Cosmosu poslední úspěšné stažení denním agentem (jeho stav v
+   `data/private/agent_state.json`), u Fabu a CGTraderu kdy naposledy přibyl záznam z ručního importu. Když je
+   automatické stažení starší než 3 dny, zvýraznit (stejné pravidlo jako v e-mailu).
 
 ## Testy
 

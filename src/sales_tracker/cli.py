@@ -524,7 +524,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     group = excl.add_mutually_exclusive_group(required=True)
     group.add_argument("--reason", help="proč se nepočítá, např. \"zkušební nákup\"")
     group.add_argument("--undo", action="store_true", help="zase počítat")
-    commands.add_parser("demo", help="ukázka na vymyšlených datech, bez účtů a sítě")
+    demo_cmd = commands.add_parser("demo", help="ukázka na vymyšlených datech, bez účtů a sítě")
+    demo_cmd.add_argument("--dashboard", action="store_true", help="a pak na nich spustit přehled")
+    board = commands.add_parser("dashboard", help="přehled prodejů v prohlížeči (Streamlit, jen lokálně)")
+    board.add_argument("--port", type=int, help="port (výchozí 8501)")
     run = commands.add_parser("run", help="denní agent: stáhne vše a pošle ranní souhrn e-mailem")
     run.add_argument("job", choices=["daily"])
     run.add_argument("--dry-run", action="store_true", help="souhrn jen vypsat, e-mail neposílat")
@@ -553,7 +556,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "demo":
         from sales_tracker import demo
 
+        if args.dashboard:
+            from sales_tracker import dashboard
+
+            return dashboard.run_demo()
         return demo.run()
+
+    if args.command == "dashboard":
+        from sales_tracker import dashboard
+
+        return dashboard.launch(dashboard.Config(DB_PATH, STATE_PATH, CATALOG_PATH, demo=False), args.port)
 
     if args.command == "exclude":
         reason = None if args.undo else args.reason.strip()

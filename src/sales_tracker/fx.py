@@ -8,6 +8,7 @@ for today is used but never cached.
 
 import sqlite3
 import ssl
+import time
 from collections.abc import Callable
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
@@ -70,6 +71,21 @@ def fetch_cnb(day: date, transport: httpx.BaseTransport | None = None) -> str:
     if response.status_code != 200:
         raise FxError(f"ČNB vrátila HTTP {response.status_code}")
     return response.text
+
+
+def polite(fetch: Callable[[date], str], pause: float = 1.0, sleep=time.sleep) -> Callable[[date], str]:
+    """The same fetch, with a pause between requests (the dashboard may need rates for many old
+    days at once; spec M6: one by one, gently)."""
+    calls = 0
+
+    def fetch_politely(day: date) -> str:
+        nonlocal calls
+        if calls:
+            sleep(pause)
+        calls += 1
+        return fetch(day)
+
+    return fetch_politely
 
 
 class Rates:
