@@ -46,8 +46,7 @@
 
 ## Otevřené otázky / neověřeno
 
-- První skutečný pondělní e-mail s týdenním shrnutím (23. 11. 2026).
-- Ranní e-mail při vypršeném přihlášení do Cosmosu; doběhnutí zmeškaného běhu po zapnutí PC.
+- Ranní e-mail při vypršeném přihlášení do Cosmosu; doběhnutí po úplném vypnutí PC (po spánku ověřeno).
 - Cosmos: formát refundu (`refund_details`) – zatím žádný nebyl; jak dlouho vydrží přihlášení.
 - Další sekce souhrnu (wishlisty), M6 přehled (dashboard), M7 portfolio.
 
@@ -58,6 +57,10 @@
 
 ## Rozhodnutí
 
+- 2026-11-23 – **Ověřeno ostře:** PC v 8:00 spalo, po probuzení v 16:32 Plánovač úlohu sám doběhl v 16:38 (kód 0),
+  odešel první pondělní e-mail s týdenním shrnutím a komentářem Claude (prošel kontrolou). Komentář obsahoval
+  pravdivé, ale nekontrolované formulace mimo seznamy („po nulovém týdnu“, „všechno přišlo z Cosmosu“, „rozběhl“) –
+  přesně hranice popsaná v README.
 - 2026-11-22 – Měny: ukládá se původní měna, součty se převádí na Kč kurzem ČNB ke dni prodeje (spec M5b).
   Ověřeno na skutečných datech: částky v Kč sedí s ručním přepočtem kurzy ČNB.
 - 2026-11-22 – Zkušební nákup z Gumroadu označen `exclude` (nepočítá se do součtů, v DB zůstává).
